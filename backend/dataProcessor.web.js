@@ -247,6 +247,420 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
   }
 });
 
+// ============================================================================
+// HELPER FUNCTIONS FOR IMAGE ANALYSIS
+// ============================================================================
+
+/**
+ * Ensures all rows have valid IDs and rowIds
+ * Enhances existing rowId logic from normalizeCsv
+ */
+function ensureValidIds(normalizedRows) {
+  const processedRows = [];
+  const generatedIds = [];
+  
+  for (let index = 0; index < normalizedRows.length; index++) {
+    const row = normalizedRows[index];
+    let processedRow = { ...row };
+    
+    // Ensure rowId exists (should already be set in normalizeCsv, but double-check)
+    if (!processedRow.rowId) {
+      processedRow.rowId = uuidv4();
+    }
+    
+    // Check if ID exists and is valid
+    if (!processedRow.ID || processedRow.ID.toString().trim() === '') {
+      // Generate unique ID if missing
+      processedRow.ID = `auto_${Date.now()}_${index}`;
+      generatedIds.push(processedRow.ID);
+    }
+    
+    processedRows.push(processedRow);
+  }
+  
+  return { processedRows, generatedIds };
+}
+
+/**
+ * Checks if URL is a Wix media URL
+ * Patterns: wix:image://, wix:document://, static.wixstatic.com, wixmp-
+ */
+function isWixMediaUrl(imageUrl) {
+  if (!imageUrl || typeof imageUrl !== 'string') return false;
+  
+  return imageUrl.startsWith('wix:image://') || 
+         imageUrl.startsWith('wix:document://') || 
+         imageUrl.includes('static.wixstatic.com') ||
+         imageUrl.includes('wixmp-');
+}
+
+/**
+ * Checks if path is a local file
+ * Detects by: lack of protocol, drive letter (C:, D:), graphic file extension
+ */
+function isLocalFile(imagePath) {
+  if (!imagePath || typeof imagePath !== 'string') return false;
+  
+  const trimmed = imagePath.trim();
+  
+  // Check for URL protocols - if present, it's NOT a local file
+  if (trimmed.startsWith('http://') || 
+      trimmed.startsWith('https://') || 
+      trimmed.startsWith('wix:')) {
+    return false;
+  }
+  
+  // Check for drive letter pattern (C:, D:, etc.)
+  const hasDriveLetter = /^[A-Za-z]:/.test(trimmed);
+  
+  // Check for graphic file extensions
+  const graphicExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+  const lowerPath = trimmed.toLowerCase();
+  const hasGraphicExtension = graphicExtensions.some(ext => lowerPath.endsWith(`.${ext}`));
+  
+  // Local file if it has drive letter OR ends with graphic extension (and no protocol)
+  return hasDriveLetter || hasGraphicExtension;
+}
+
+/**
+ * Validates if URL is callable with proper extension
+ * Returns: {isValid, hasExtension, error}
+ */
+function isValidCallableUrl(imageUrl, validExtensions) {
+  let isValidUrl = false;
+  let hasValidExtension = false;
+  let validationError = null;
+  
+  try {
+    // Check if it's a valid URL format
+    const url = new URL(imageUrl);
+    isValidUrl = url.protocol === 'http:' || url.protocol === 'https:';
+    
+    // Extract file extension from URL path (before query params)
+    const urlPath = url.pathname.toLowerCase();
+    const pathParts = urlPath.split('.');
+    
+    // Check if there's an extension in the path
+    if (pathParts.length > 1) {
+      const urlExt = pathParts[pathParts.length - 1].split('/')[0];
+      hasValidExtension = validExtensions.includes(urlExt);
+    } else {
+      hasValidExtension = false;
+      validationError = 'No image file extension found in URL';
+    }
+    
+  } catch (e) {
+    isValidUrl = false;
+    validationError = 'Invalid URL format: ' + e.message;
+  }
+  
+  return {
+    isValid: isValidUrl && hasValidExtension,
+    hasExtension: hasValidExtension,
+    error: validationError
+  };
+}
+
+/**
+ * Analyzes image URLs and categorizes them
+ * Returns: {wixUrls, callableUrls, localFiles, emptyOrInvalid, invalidWarnings}
+ */
+function analyzeImageUrls(processedRows, validExtensions) {
+  const analysis = {
+    wixUrls: [],
+    callableUrls: [],
+    localFiles: [],
+    emptyOrInvalid: []
+  };
+  const invalidWarnings = [];
+  
+  for (let index = 0; index < processedRows.length; index++) {
+    const row = processedRows[index];
+    
+    if (row.mainImg && row.mainImg.trim() !== '') {
+      const imageUrl = row.mainImg.trim();
+      
+      // Check if it's a Wix media URL
+      if (isWixMediaUrl(imageUrl)) {
+        analysis.wixUrls.push({
+          rowId: row.rowId,
+          productId: row.ID,
+          productName: row.name || 'Unknown Product',
+          imageUrl: imageUrl,
+          rowIndex: index
+        });
+      }
+      // Check if it's a local file
+      else if (isLocalFile(imageUrl)) {
+        analysis.localFiles.push({
+          rowId: row.rowId,
+          productId: row.ID,
+          productName: row.name || 'Unknown Product',
+          filePath: imageUrl,
+          rowIndex: index
+        });
+      }
+      // Check if it's a valid callable URL
+      else {
+        const validation = isValidCallableUrl(imageUrl, validExtensions);
+        
+        if (validation.isValid) {
+          analysis.callableUrls.push({
+            rowId: row.rowId,
+            productId: row.ID,
+            productName: row.name || 'Unknown Product',
+            imageUrl: imageUrl,
+            rowIndex: index
+          });
+        } else {
+          // Invalid URL or wrong file type
+          const reason = validation.error || 'Unknown error';
+          analysis.emptyOrInvalid.push({
+            rowId: row.rowId,
+            productId: row.ID,
+            productName: row.name || 'Unknown Product',
+            imageUrl: imageUrl,
+            reason: reason,
+            rowIndex: index
+          });
+          
+          invalidWarnings.push({
+            productName: row.name || row.ID,
+            reason: reason,
+            url: imageUrl
+          });
+        }
+      }
+    } else {
+      // Empty or missing image
+      analysis.emptyOrInvalid.push({
+        rowId: row.rowId,
+        productId: row.ID,
+        productName: row.name || 'Unknown Product',
+        reason: 'Missing image URL',
+        rowIndex: index
+      });
+    }
+  }
+  
+  return { ...analysis, invalidWarnings };
+}
+
+/**
+ * Determines which of 6 cases applies based on analysis
+ */
+function determineCaseType(analysis, totalRows) {
+  const hasCallable = analysis.callableUrls.length > 0;
+  const hasWix = analysis.wixUrls.length > 0;
+  const hasLocal = analysis.localFiles.length > 0;
+  const hasEmpty = analysis.emptyOrInvalid.length > 0;
+  
+  const allCallable = analysis.callableUrls.length === totalRows;
+  const allWix = analysis.wixUrls.length === totalRows;
+  const allLocal = analysis.localFiles.length === totalRows;
+  const allEmpty = analysis.emptyOrInvalid.length === totalRows;
+  
+  // CASE 1: ALL 3rd party callable URLs
+  if (allCallable) {
+    return "ALL_CALLABLE";
+  }
+  
+  // CASE 2: ALL Wix URLs
+  if (allWix) {
+    return "ALL_WIX";
+  }
+  
+  // CASE 3: NO URLs &/OR NO local files (all empty/invalid)
+  if (allEmpty) {
+    return "NO_IMAGES";
+  }
+  
+  // CASE 5: ALL local files
+  if (allLocal) {
+    return "ALL_LOCAL";
+  }
+  
+  // CASE 4: NO callable URLs (but has other types)
+  if (!hasCallable && (hasWix || hasEmpty || hasLocal)) {
+    return "NO_CALLABLE";
+  }
+  
+  // CASE 6: MIX of 1 or more types
+  return "MIXED";
+}
+
+/**
+ * Builds result object with instructions based on case type
+ */
+function buildCaseResult(caseType, analysis, processedRows, generatedIds) {
+  const baseResult = {
+    success: true,
+    caseType: caseType,
+    totalRows: processedRows.length,
+    generatedIds: generatedIds,
+    analysis: {
+      callableCount: analysis.callableUrls.length,
+      wixCount: analysis.wixUrls.length,
+      localCount: analysis.localFiles.length,
+      emptyCount: analysis.emptyOrInvalid.length
+    }
+  };
+  
+  switch (caseType) {
+    case "ALL_CALLABLE":
+      return {
+        ...baseResult,
+        callableUrls: analysis.callableUrls,
+        instructions: "All images are external URLs ready for processing",
+        nextAction: "processCallableUrls"
+      };
+      
+    case "ALL_WIX":
+      return {
+        ...baseResult,
+        wixUrls: analysis.wixUrls,
+        instructions: "All images are Wix URLs - need SmartSync app or manual conversion",
+        nextAction: "requiresSmartSyncApp"
+      };
+      
+    case "NO_IMAGES":
+      return {
+        ...baseResult,
+        success: false,
+        emptyProducts: analysis.emptyOrInvalid,
+        instructions: "No images found - add URLs or upload files",
+        nextAction: "addImages"
+      };
+      
+    case "ALL_LOCAL":
+      return {
+        ...baseResult,
+        localFiles: analysis.localFiles,
+        instructions: "All images are local files ready for upload",
+        nextAction: "uploadLocalFiles"
+      };
+      
+    case "NO_CALLABLE":
+      return {
+        ...baseResult,
+        wixUrls: analysis.wixUrls,
+        localFiles: analysis.localFiles,
+        emptyProducts: analysis.emptyOrInvalid,
+        instructions: "Mix of Wix URLs, local files, and missing images - no callable URLs detected",
+        nextAction: "handleMixedNonCallable"
+      };
+      
+    case "MIXED":
+      return {
+        ...baseResult,
+        callableUrls: analysis.callableUrls,
+        wixUrls: analysis.wixUrls,
+        localFiles: analysis.localFiles,
+        emptyProducts: analysis.emptyOrInvalid,
+        instructions: "Multiple image types detected - see breakdown for details",
+        nextAction: "handleMixedTypes",
+        breakdown: {
+          callable: `${analysis.callableUrls.length} external URLs ready for processing`,
+          wix: `${analysis.wixUrls.length} Wix URLs require SmartSync app`,
+          local: `${analysis.localFiles.length} local files ready for upload`,
+          empty: `${analysis.emptyOrInvalid.length} products missing images`
+        }
+      };
+      
+    default:
+      return {
+        ...baseResult,
+        success: false,
+        error: "Unknown case type",
+        nextAction: "error"
+      };
+  }
+}
+
+// ============================================================================
+// NEW MAIN FUNCTION: ANALYZE IMAGE DATA (CLASSIFICATION ONLY)
+// ============================================================================
+
+/**
+ * Analyzes and classifies image data into 6 categories
+ * DOES NOT save to collections - only returns classification results
+ */
+export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
+  try {
+    if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
+      throw new Error("Invalid or empty normalized data provided");
+    }
+
+    await postEntryBE("info", "Starting image data analysis and classification", {
+      rowCount: normalizedRows.length,
+      location: "dataConverter.web.js"
+    });
+
+    // Step 1: Ensure all rows have valid IDs
+    const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
+    
+    if (generatedIds.length > 0) {
+      await postEntryBE("info", `Generated ${generatedIds.length} missing product IDs`, {
+        generatedIds: generatedIds,
+        location: "dataConverter.web.js"
+      });
+    }
+
+    // Step 2: Analyze and categorize image URLs
+    const VALID_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+    const analysis = analyzeImageUrls(processedRows, VALID_IMAGE_EXTENSIONS);
+    
+    // Log invalid URL warnings
+    if (analysis.invalidWarnings.length > 0) {
+      await postEntryBE("warn", `Found ${analysis.invalidWarnings.length} invalid image URLs`, {
+        invalidUrls: analysis.invalidWarnings,
+        location: "dataConverter.web.js"
+      });
+    }
+
+    await postEntryBE("success", "Image URL analysis completed", {
+      callableUrls: analysis.callableUrls.length,
+      wixUrls: analysis.wixUrls.length,
+      localFiles: analysis.localFiles.length,
+      emptyOrInvalid: analysis.emptyOrInvalid.length,
+      location: "dataConverter.web.js"
+    });
+
+    // Step 3: Determine case type
+    const caseType = determineCaseType(analysis, processedRows.length);
+    
+    await postEntryBE("info", `Image classification determined: ${caseType}`, {
+      caseType: caseType,
+      location: "dataConverter.web.js"
+    });
+
+    // Step 4: Build and return result with instructions
+    const result = buildCaseResult(caseType, analysis, processedRows, generatedIds);
+    
+    await postEntryBE("success", "Image data analysis completed successfully", {
+      caseType: result.caseType,
+      nextAction: result.nextAction,
+      location: "dataConverter.web.js"
+    });
+
+    return result;
+
+  } catch (err) {
+    await postEntryBE("error", "Image data analysis failed", {
+      error: err.message,
+      location: "dataConverter.web.js"
+    });
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+});
+
+// ============================================================================
+// ORIGINAL FUNCTION: KEPT FOR BACKWARD COMPATIBILITY
+// ============================================================================
+
 export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (normalizedRows) => {
   try {
     if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {

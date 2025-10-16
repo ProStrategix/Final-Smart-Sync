@@ -39,15 +39,26 @@ export async function uploadAccessCsv(file) {
             }
 
 export async function processCsv(csvText) {
-   const rawParse = await parseCsv(text)
+   const rawParse = await parseCsv(csvText)
     let parsed = JSON.parse(rawParse)
     let schemaMap = await getSchemaMap()
     console.log('data heading to normalization: ' , parsed, ' vs map: ', schemaMap)
-    postEntry("Csv data has been parsed and schema map creates", 'success',"dataManagement.js", null)
+    postEntry("Csv data has been parsed and schema map created", 'success',"dataManagement.js", null)
     let normalizedRaw = await normalizeCsv(parsed.headers, parsed.rows, schemaMap)
     let normalize = normalizedRaw
     console.log('normalized data: ', normalize)
     postEntry("Csv data has been normalized", 'success',"dataManagement.js", null)
+    
+    // Check for missing essential headers first
+    if (normalize.missingEssentialHeaders && normalize.missingEssentialHeaders.length > 0) {
+        console.warn("Missing essential headers detected:", normalize.missingEssentialHeaders);
+        pushMessage(messages, "warning", `Missing ${normalize.missingEssentialHeaders.length} essential headers`, "⚠️");
+        postEntry(`Missing essential headers: ${normalize.missingEssentialHeaders.join(", ")}`, 'warning', loc, null);
+        await reportMissingHeaders(normalize.missingEssentialHeaders);
+        return { success: false, error: "Missing essential headers", missingHeaders: normalize.missingEssentialHeaders };
+    }
+    
+    // Check for normalized rows
     if (normalize.normalizedRows?.length > 0) {
         pushMessage(messages, "success", "CSV data has been normalized.", "✅")
         postEntry("Data have been normalized", 'success',"dataConverter.web.js", null)
@@ -59,7 +70,8 @@ export async function processCsv(csvText) {
         pushMessage(messages, "error", "No normalized rows found after normalization.", "❌");
         goTo("ERROR");
        
-    }    return { success: false, error: "No normalized rows found after normalization." };
+    }    
+    return { success: false, error: "No normalized rows found after normalization." };
 }
 
 export async function getSchemaMap() {
