@@ -1,0 +1,657 @@
+SMARTSYNC V3 - COMPREHENSIVE SYSTEM SUMMARY
+Updated: 2025-10-05
+
+================================================================================
+SYSTEM OVERVIEW
+================================================================================
+SmartSync v3 is a Wix Blocks widget that processes CSV product uploads through
+a multi-stage pipeline: upload → parse all data → normalize all data → validate all data → split data from images → 
+image processing → integrate data and images → review  and then finally transmit. The system handles schema mapping, 
+essential field validation, and multiple image URL types (Wix URLs, callable 
+URLs, local files).
+
+================================================================================
+CURRENT V3 ARCHITECTURE
+================================================================================
+
+FRONTEND MODULES (public/):
+---------------------------
+1. widget.js - Main orchestrator
+   - Handles CSV upload via Wix uploader
+   - Coordinates all workflow stages
+   - Manages state transitions
+   - Processes image uploads (URLs and local files)
+   - Handles error routing and user feedback
+   - Current state is highly complex and difficult to read and manage.
+   - Part of this refactor is to move more functional processing to main helper files 
+   - Ideal would be have this be all top level functions.
+
+2. dataManagement.js - Data processing hub -- 
+   - parseCsv(): Uses PapaParse to parse CSV text → {headers, rows}
+   - getSchemaMap(): Queries SchemaNormalization collection
+   - splitAndSaveData(): Routes to backend, handles results
+   - reportMissingHeaders(): Displays missing essential fields with guidance
+   - processImagesWithTicker(): Processes images with progress display
+    - all core non image processing specific items that can be run outside of the backend should reside here.
+
+3. stateManagement.js - State, UI management, NOTIFICATIONS
+   - State enum: START - PROCESSDATA - DATAREPORT - RETRIEVEIMGS - CONVERT - COMPILE - REVIEW - TRANSMIT - FINISHRESET
+   - Error states: ERRORMISSINGDATA, ERRORMISSINGIMGS, ERROR
+   - goTo(): Changes widget state
+   - pushMessage(): Updates status repeater with notifications
+   - pushMessageImg(): Updates image processing ticker
+   - updateStatus(): Updates progress indicators
+
+4. logManagement.js - Logging system
+   - postEntry(): Logs to frontend console and backend
+   - initializeLog(): Sets up log display
+   - Maintains audit trail of all operations
+
+5. imageManagement.js - Image processing UI
+   - manageImgResult(): Handles successful image conversions
+   - handleImgError(): Handles image processing errors
+   - setupErrorReportUI(): Displays error reports
+   - handleMatch(): Manages product-image matching interface
+   -  Given the restrictions due to a lack of appropriate tools and permissions within the wix system. we have to do the following
+   - split images by type: local images (ext. png, jpeg, svg...),  3-party callable and downloadable, wixUrls  as each is processed differently
+   - local images => direct upload-> collate wiximgids
+   - 3rd party fetch url => download => acquire post location -> send to mediaManager -> collate wiximgids 
+   - wixUrl - separate app that runs on the the transfer site  that - fetch url => download img url => direct upload-> collate wiximgids
+   
+   SPECIAL CARE IS REQUIRED TO ENSURE THE ROWIDS REMAIN AFFIXED TO THEIR INITIAL IMAGE.  As the final step or merge data and image demands it.
+
+6. transferManagement.js - Final review & transmission
+   - handleFinalReview(): Prepares data for transmission
+   - Coordinates final data validation before store import
+
+7. classes.js - Data models
+   - Entry: Log entry structure
+   - Log: Log collection management
+   - MediaFile: File upload metadata
+
+BACKEND MODULES (backend/):
+---------------------------
+1. dataConverter.web.js - Core data processing
+   
+   getUrl(wixUrl):
+   - Converts wix:document:// URLs to downloadable URLs
+   - Uses mediaManager.getDownloadUrl()
+   - Returns {success, downloadUrl} or {success: false, error}
+
+   normalizeCsv(headers, rows, schemaMap):
+   - Maps CSV headers to schema fields using aliases
+   - Validates essential fields (except mainImg)
+   - Handles header normalization with flags (-HU, -U)
+   - Fixes unmapped essential headers with fuzzy matching
+   - Returns {normalizedRows, missingEssentialHeaders, invalidRows}
+   - Adds formattedPrice for unitPrice fields
+
+   splitAndSaveNormalizedData(normalizedRows): THIS MUST BE REFACTORED IT IS SIMPLE TOO UNWEILDY TO COMPREHEND
+   - Generates IDs for rows missing them
+   - Analyzes image URLs into categories:
+     * Wix URLs (wix:image://, wix:document://, static.wixstatic.com)
+     * Callable URLs (http://, https:// with valid extensions)
+     * Empty/Invalid URLs
+   - EARLY RETURN 1: Wix URLs → requiresSmartSyncApp
+   - EARLY RETURN 2: All empty → missingImages
+   - EARLY RETURN 3: Callable URLs → saves to PendingImageUrls
+   - EARLY RETURN 4: All Wix URLs (converted) → saves to collections
+   - Uses elevated permissions for collection operations
+   - Validates image extensions: jpg, jpeg, png, gif, webp, bmp, svg
+   - Handles known image hosts without extensions (Unsplash, Imgur, etc.)
+
+2. imageConverter.web.js - Image processing
+   
+   processAndSaveImages(fullArray):
+   - Orchestrates image import and storage
+   - Returns {success, saved, errors, successCount, errorCount}
+
+   fetchImagesFromWeb(fullArray):
+   - Uses files.importFile() from wix-media.v2
+   - Validates image extensions
+   - Imports external URLs to Wix Media Manager
+   - Returns detailed error guidance via getErrorGuidance()
+   - Handles errors: URL_IMPORT_ERROR, INVALID_EXTENSION, INVALID_ARGUMENT
+
+   uploadImagesToWixAndSave(dataArray):
+   - Updates WixImageURLs collection with converted URLs
+   - Stores wixFileId and convertedAt timestamp
+
+   processLocalFileUpload(fileUrl, productId, productName):
+   - Handles locally uploaded files
+   - Updates WixImageURLs with local file URLs
+
+   getErrorGuidance(errorCode, errorMsg, imageUrl):
+   - Provides user-friendly error messages
+   - Maps technical errors to actionable solutions
+   - Returns {userMessage, solution, actionRequired}
+
+3. logManagementBE.web.js - Backend logging
+   - postEntryBE(): Persists logs to ProcessLogs collection
+   - Stores structured log data with metadata
+
+================================================================================
+DATA FLOW - COMPLETE PIPELINE
+================================================================================
+
+STAGE 1: CSV UPLOAD & PARSING (Frontend)
+-----------------------------------------
+1. User uploads CSV via #uploadCsvButton
+2. File uploaded to Wix Media Manager
+3. getUrl() converts wix:document:// → downloadable URL
+4. fetch() downloads CSV text
+5. parseCsv() uses PapaParse → {headers, rows}
+6. State: INIT → STATUSTRACK
+
+STAGE 2: SCHEMA MAPPING (Frontend)
+-----------------------------------
+1. getSchemaMap() queries SchemaNormalization collection
+2. Returns map: {mainField: {aliases[], flags[], essential: boolean}}
+3. Schema includes:
+   - Main field names (ID, name, mainImg, category, unitPrice, etc.)
+   - Aliases (Product-ID, Product_ID, PROD_ID, etc.)
+   - Flags (-HU: hyphen/underscore, -U: underscore only)
+   - Essential markers (combos: true)
+
+STAGE 3: NORMALIZATION (Backend)
+---------------------------------
+1. normalizeCsv(headers, rows, schemaMap) called
+2. Header mapping with alias matching
+3. Fuzzy matching for unmapped essential headers
+4. Row validation (essential fields except mainImg)
+5. Price formatting (unitPrice → formattedPrice)
+6. Returns {normalizedRows, missingEssentialHeaders, invalidRows}
+
+STAGE 4: VALIDATION & ROUTING (Frontend)
+-----------------------------------------
+IF missingEssentialHeaders.length > 0:
+  → reportMissingHeaders()
+  → Query MissingEssential collection for guidance
+  → Display in #missingHeadersRepeater
+  → goTo("ERRORMISSINGHEADERS")
+  → User must fix CSV and re-upload
+
+ELSE IF normalizedRows.length > 0:
+  → splitAndSaveData() → calls backend splitAndSaveNormalizedData()
+
+STAGE 5: IMAGE URL ANALYSIS (Backend)
+--------------------------------------
+splitAndSaveNormalizedData() categorizes images:
+
+CASE 1: Wix URLs Detected
+  - Patterns: wix:image://, wix:document://, static.wixstatic.com, wixmp-
+  - Returns: {requiresSmartSyncApp: true, wixUrls[]}
+  - Frontend: goTo("ERRORMISSINGIMAGES")
+  - Message: Install SmartSync Wix Image Converter app
+  - User Action: Install app or convert URLs manually
+
+CASE 2: All Images Missing
+  - All products have empty/invalid mainImg
+  - Returns: {missingImages: true, emptyImageProducts[]}
+  - Frontend: goTo("ERRORMISSINGIMAGES")
+  - Message: List of products without images
+  - User Action: Add image URLs or upload images
+
+CASE 3: Callable URLs Detected
+  - Valid http://, https:// URLs with image extensions
+  - Backend: Clears PendingImageUrls, inserts new URLs
+  - Returns: {requiresImageProcessing: true, callableUrls[]}
+  - Frontend: goTo("PROCESSING")
+  - Initiates image processing workflow
+
+CASE 4: All Images Already Wix URLs (Converted)
+  - All images are already Wix Media URLs
+  - Backend: Saves to PendingImageUrls (for consistency)
+  - Returns: {success: true, totalRowsProcessed, imageRecordsSaved}
+  - Frontend: Proceeds to next stage
+
+STAGE 6: IMAGE PROCESSING (Frontend + Backend)
+-----------------------------------------------
+For callable URLs:
+1. Frontend loops through callableUrls[]
+2. For each URL:
+   - pushMessageImg() → "⏳ Pending"
+   - pushMessageImg() → "🔄 Processing"
+   - processAndSaveImages([url]) → backend
+   - Backend: files.importFile() → Wix Media Manager
+   - Backend: Updates WixImageURLs collection
+   - Frontend: manageImgResult() or handleImgError()
+   - pushMessageImg() → "✅ Complete" or "❌ Failed"
+
+3. After all images processed:
+   - getErrorReport() checks for errors
+   - IF errors: setupErrorReportUI() → display error list
+   - IF no errors: Auto-advance to TRANSMITTING after 5 seconds
+
+STAGE 7: PRODUCT-IMAGE MATCHING (Optional)
+-------------------------------------------
+For local file uploads:
+1. User uploads files via #addImagesFilesButton
+2. Files uploaded to Wix Media Manager
+3. goTo("PROCESSING")
+4. manageFileResult() processes each file
+5. goTo("MATCH") → product-image matching interface
+6. User clicks #notChecked → #checked
+7. setFieldValues() links image to product
+8. User clicks #notMatched → #matched
+
+STAGE 8: FINAL REVIEW & TRANSMISSION
+-------------------------------------
+1. handleFinalReview() prepares data
+2. goTo("TRANSMITTING")
+3. User reviews final data
+4. Transmission to Wix store (implementation pending)
+5. goTo("DONE")
+
+================================================================================
+KEY COLLECTIONS
+================================================================================
+
+@prostrategix/smartsync-ecommerce/SchemaNormalization
+Purpose: Maps CSV headers to normalized field names
+Fields:
+  - main: Primary field name (e.g., "ID", "name", "mainImg")
+  - alt1-alt7: Alternative header names (aliases)
+  - Notes: Normalization flags (-HU, -U)
+  - combos: Essential field marker (true/false)
+Example:
+  main: "ID"
+  alt1: "Product-ID"
+  alt2: "Product_ID"
+  alt3: "PROD_ID"
+  combos: true (essential)
+
+@prostrategix/smartsync-ecommerce/MissingEssential
+Purpose: Provides guidance for missing essential headers
+Fields:
+  - header: Field name
+  - description: What this field is for
+  - solution: How to fix the missing field
+Used by: reportMissingHeaders() to populate error UI
+
+@prostrategix/smartsync-ecommerce/PendingImageUrls
+Purpose: Stores image URLs awaiting processing
+Fields:
+  - productId: Product identifier
+  - productName: Product name
+  - imageUrl: Image URL to process
+  - status: 'pending', 'processing', 'completed', 'failed'
+Lifecycle:
+  1. Backend clears collection before each run
+  2. Backend inserts callable URLs
+  3. Frontend processes URLs one by one
+  4. Backend moves to WixImageURLs after conversion
+
+@prostrategix/smartsync-ecommerce/WixImageURLs
+Purpose: Stores product IDs and converted Wix image URLs
+Fields:
+  - id: Product ID (matches ParsedData)
+  - image: Wix Media URL
+  - wixFileId: Wix file descriptor ID
+  - convertedAt: Timestamp
+  - uploadMethod: 'url_import' or 'local_file'
+
+@prostrategix/smartsync-ecommerce/ParsedData
+Purpose: Stores all product data except images
+Fields: All normalized fields except mainImg
+  - ID, name, headline, category, unitPrice, formattedPrice, strain, etc.
+Note: Separated from images for flexible data management
+
+@prostrategix/smartsync-ecommerce/ProcessLogs
+Purpose: Durable system logs
+Fields:
+  - timestamp: Log time
+  - level: 'info', 'success', 'warn', 'error'
+  - component: Source module
+  - message: Log message
+  - metadata: Additional data (JSON)
+  - jobId: Correlation ID
+Retention: 3-5 days (purge job planned)
+
+================================================================================
+ERROR STATES & HANDLING
+================================================================================
+
+ERRORMISSINGHEADERS
+-------------------
+Trigger: Essential fields missing from CSV
+Display: #missingHeadersRepeater
+Content: List of missing headers with:
+  - Field name
+  - Description (from MissingEssential collection)
+  - Solution guidance
+User Action: Add missing columns to CSV, re-upload
+Button: #returnButton → goTo("INIT")
+
+ERRORMISSINGIMAGES
+------------------
+Handles TWO cases:
+
+Case 1 - Wix URLs Detected:
+  Trigger: result.requiresSmartSyncApp === true
+  Display: #missingImagesMessage
+  Content:
+    - Count of products with Wix URLs
+    - List of affected products
+    - SmartSync app install link
+  User Action: Install app or convert URLs manually
+
+Case 2 - No Images:
+  Trigger: result.missingImages === true
+  Display: #missingImagesMessage
+  Content:
+    - Count of products without images
+    - List of affected products
+    - Guidance to add URLs or upload images
+  User Action: Update CSV with image URLs or upload files
+
+PROCESSING ERRORS
+-----------------
+Display: #errorReportRepeater
+Content: List of failed image imports with:
+  - Product name
+  - Error code
+  - User-friendly message
+  - Solution guidance
+  - Action required
+Buttons:
+  - #fileErrorButton → Show error details
+  - #returnButton → goTo("INIT")
+
+================================================================================
+ESSENTIAL FIELDS
+================================================================================
+Required fields (from SchemaNormalization where combos=true):
+1. ID (Product-ID, Product_ID, PROD_ID)
+2. name (Product_Name, Product-Name)
+3. mainImg (Main-Image, main_image) - validated separately
+4. category (product_category, Product-Category)
+5. unitPrice (unit-price, price, Price)
+6. strain (Strain-Info, strain_info)
+7. headline (Product Headline, Product-Headline)
+
+Note: mainImg validation is separate - handled in image URL analysis
+Other fields validated during normalization
+
+================================================================================
+IMAGE URL VALIDATION
+================================================================================
+
+VALID WIX PATTERNS:
+- wix:image://v1/...
+- wix:document://v1/...
+- static.wixstatic.com/...
+- ...wixmp-...
+
+VALID CALLABLE PATTERNS:
+- http://... or https://...
+- Must have valid extension: jpg, jpeg, png, gif, webp, bmp, svg
+- OR from known image hosts: images.unsplash.com, i.imgur.com, etc.
+
+INVALID PATTERNS:
+- Empty or whitespace
+- Invalid URL format
+- Wrong file extension
+- Blocked/inaccessible URLs
+
+================================================================================
+STATE MACHINE
+================================================================================
+
+States:
+  INIT - Initial state, ready for upload
+  CSVUPLOADED - File uploaded to Media Manager
+  STATUSTRACK - Progress tracking display
+  ERRORMISSINGHEADERS - Essential fields missing
+  ERRORMISSINGIMAGES - Image issues (Wix URLs or missing)
+  PROCESSING - Image processing in progress
+  MATCH - Product-image matching interface
+  TRANSMITTED - Data ready for transmission
+  DONE - Process complete
+  ERROR - General error state
+
+Transitions:
+  INIT → CSVUPLOADED (file upload)
+  CSVUPLOADED → STATUSTRACK (URL resolved)
+  STATUSTRACK → ERRORMISSINGHEADERS (validation failed)
+  STATUSTRACK → ERRORMISSINGIMAGES (image issues)
+  STATUSTRACK → PROCESSING (callable URLs)
+  PROCESSING → MATCH (local files)
+  PROCESSING → TRANSMITTING (URL processing complete)
+  MATCH → TRANSMITTING (matching complete)
+  TRANSMITTING → DONE (transmission complete)
+  Any → ERROR (critical failure)
+
+================================================================================
+CURRENT ISSUES & RESOLUTIONS
+================================================================================
+
+RESOLVED ISSUES:
+✅ Issue 1: PapaParse backend error
+   - Moved all CSV parsing to frontend
+   - Backend only receives parsed data structures
+
+✅ Issue 2: Wrong error state routing
+   - Fixed test CSV headers
+   - Corrected routing logic in splitAndSaveData()
+
+✅ Issue 3: Logic errors in splitAndSaveData()
+   - Fixed contradictory conditions
+   - Corrected property checks (missingImages is boolean)
+
+✅ Issue 4: Collection field name mismatch
+   - Updated query to use correct 'header' field
+   - Added lowercase/trim matching
+
+✅ Issue 5: Widget.js error handling
+   - Added explicit handling for all error types
+   - Consolidated routing to ERRORMISSINGIMAGES
+
+✅ Issue 6: Routing consolidation
+   - Both Wix URLs and missing images → ERRORMISSINGIMAGES
+   - Different messages for each case
+
+KNOWN LIMITATIONS:
+⚠️ ProcessLogs purge job not implemented (3-5 day retention planned)
+⚠️ StateStore collection not created (for state persistence)
+⚠️ JobId convention not established (parent-assigned UUID planned)
+⚠️ TRANSMITTED event wiring not implemented (parent handoff)
+⚠️ Final transmission to Wix store not implemented
+
+================================================================================
+TEST FILES
+================================================================================
+
+test_wix_urls_FIXED.csv
+- Correct headers matching schema
+- Mix of Wix URL types
+- Tests ERRORMISSINGIMAGES (Wix URLs case)
+
+test_no_images.csv
+- Products with empty mainImg fields
+- Tests ERRORMISSINGIMAGES (missing images case)
+
+test_missing_headers.csv
+- CSV missing essential fields
+- Tests ERRORMISSINGHEADERS state
+
+test_valid_images.csv
+- Valid callable image URLs
+- Tests successful image processing
+
+================================================================================
+NEXT STEPS FOR DEVELOPMENT
+================================================================================
+
+IMMEDIATE PRIORITIES:
+1. Implement ProcessLogs purge job (3-5 day retention)
+2. Create StateStore collection for state persistence
+3. Establish JobId convention (parent-assigned UUID)
+4. Wire TRANSMITTED event (parent handoff)
+5. Implement final transmission to Wix store
+
+MINI APPS READY FOR INTEGRATION:
+1. Image Processing App
+   - Integration point: PendingImageUrls collection
+   - Processes callable URLs
+   - Updates WixImageURLs collection
+
+2. User Guidance App
+   - Integration point: Error states
+   - Provides contextual help
+   - Guides users through fixes
+
+3. Product Management App
+   - Integration point: ParsedData collection
+   - Manages normalized product data
+   - Prepares for store import
+
+FUTURE ENHANCEMENTS:
+- Add layer scoring (80% match threshold)
+- Add essential header check enforcement
+- Add AJV pattern-based schema mapping
+- Implement batch processing for large CSVs
+- Add progress indicators for long operations
+- Implement retry logic for failed image imports
+- Add data validation rules beyond essential fields
+
+================================================================================
+DEPLOYMENT CHECKLIST
+================================================================================
+
+BEFORE DEPLOYMENT:
+☐ Test all error states with various CSV formats
+☐ Verify image processing with different URL types
+☐ Test local file upload workflow
+☐ Verify collection permissions (elevated access)
+☐ Test state transitions and navigation
+☐ Verify logging system captures all events
+☐ Test with large CSV files (performance)
+☐ Verify error messages are user-friendly
+☐ Test product-image matching interface
+☐ Verify data integrity in all collections
+
+DEPLOYMENT STEPS:
+1. Zip all modules (widget.js, public/, backend/)
+2. Upload to Wix Blocks
+3. Configure collection permissions
+4. Test in staging environment
+5. Deploy to production
+6. Monitor ProcessLogs for issues
+7. Gather user feedback
+
+================================================================================
+TECHNICAL NOTES
+================================================================================
+
+WIX BLOCKS CONSTRAINTS:
+- Props are the only stable bridge into widget
+- onPropsChanged is the canonical state change handler
+- No direct parent-widget communication except props
+- Backend functions must be webMethods
+- Collections require elevated permissions for bulk operations
+- PapaParse is frontend-only (no Node.js in Wix backend)
+
+PERFORMANCE CONSIDERATIONS:
+- Image processing is sequential (one at a time)
+- Large CSVs may take time to process
+- Collection queries limited to 1000 items
+- Bulk operations preferred over individual inserts
+- Elevated permissions required for collection operations
+
+SECURITY CONSIDERATIONS:
+- All backend functions use Permissions.Anyone
+- Elevated permissions for collection operations
+- No sensitive data stored in logs
+- Image URLs validated before processing
+- File extensions validated before import
+
+================================================================================
+END OF SUMMARY
+================================================================================
+===============
+BLACKBOX QUESTIONS
+==========
+
+Scope Confirmation: Should the system handle all 4 cases from splitAndSaveNormalizedData():
+
+Case 1: Wix URLs detected → show error message ----- NOT ERROR BUT INSTRUCTIONS ON WHATELSE THEY NEED TO DO - MERGES WITH #4
+Case 2: All images missing → show error message --- AS ABOVE 
+Case 3: Callable URLs → save to PendingImageUrls (but NOT process them)
+Case 4: Already Wix URLs → save to collections
+Case 2 is really four cases - all missing, some missing, all missing but have local files ready to upload, have some files missing and some files to upload.
+Or do you want to stop before any of these cases execute? WE ARE TO STOP BEFORE ANY OF THESE EXECUTING:
+
+
+		CASE 1:  ALL 3RD PARTY CALLABLE URLs
+		CASE 2: ALL WIX URLs
+		CASE3: NO URLs &/OR NO LOCAL FILES
+		CASE4: NO CALLABLE URLs
+		CASE 5: ALL LOCAL FILES 
+		CASE 6; MIX OF 1 OR MORE ===> DIRECTIONS FOR ALL CASES IN THE MIX
+
+Current File Status: The documentation mentions that splitAndSaveNormalizedData() is "SIMPLE TOO UNWIELDY TO COMPREHEND" and needs refactoring. Should I:
+
+I suggest you and I step through the app.js file. this will make it clearer.
+
+Refactor this function as part of the work  FUNCTION as in the sence of major step, processing data, processing images..
+Or just ensure it works correctly up to the split point? IT WILL CONTINUE TO THE END BUT FOR THIS EXERCISE WE ARE ONLY FOCUSING ON THE STEPS UP TO BUT NOT INCLUDING THE SPLITTING OF THE DATA
+Testing: Do you have test CSV files available that I should use to verify the implementation works correctly? YES TEST FILES EXIST
+
+End State: When the split is complete, what should the user see? Should it:
+  TOO FAR - WE HALT AFTER SPLIT
+ 
+
+WHAT'S WORKING WELL NOTIFICATIONS (DON'T FUCK WITH THIS - NOT A OPTION TO REMOVE), LOGS (NO TOUCH), PRETTY MUCH ALL THE DATA PROCESS WORKS WELL - FOCUS HERE SHOULD BE DATACONVERTER AND DATAMANAGER  
+Display a success message showing what was categorized? 
+Show the state of PendingImageUrls/ParsedData collections?
+Just stop at a particular state in the state machine?
+Please clarify these points so I can create an accurate implementation plan!
+
+// 1. ID Management
+ensureRowIds(normalizedRows) 
+  → Returns: {processedRows, generatedIds}
+  -- FUNCTIONALITY OF THIS NATURE EXISTS - PLEASE ENSURE THIS ENHANCES VERSUS COMPETES. WE ONLY NEED ONE.
+
+2 & 3 EXIST => READ DON'T GUESS -> DONT REINVENT TOO COSTLY
+		// 2. Image URL Validation (EXISTS)
+		isWixMediaUrl(imageUrl)
+		  → Returns: boolean
+
+		isValidCallableUrl(imageUrl, validExtensions)
+		  → Returns: {isValid, hasExtension, error}
+
+		// 3. Image Analysis
+		analyzeImageUrls(processedRows, validExtensions)
+		  → Returns: {wixUrls[], callableUrls[], emptyOrInvalid[], invalidWarnings[]}
+		  
+		  
+ANALOGS EXIST FOR 4 - 6,  BUT NOT AS EXPLICITY OUTLINED AS 4 BUT CLEARLY THERE FOR 5 & 6 (FOLLOW GUIDANCE FROM #1 ENHANCE DON'T RECREATE)
+		// 4. Case Handlers (Early Returns)
+		handleWixUrlsCase(wixUrls)
+		  → Returns: {success: false, requiresSmartSyncApp: true, ...}
+
+		handleMissingImagesCase(emptyImageProducts, totalProducts)
+		  → Returns: {success: false, missingImages: true, ...}
+
+		handleCallableUrlsCase(processedRows, callableUrls)
+		  → Returns: {success: true, requiresImageProcessing: true, ...}
+
+		handlePreConvertedCase(processedRows, generatedIds)
+		  → Returns: {success: true, totalRowsProcessed, ...}
+
+		// 5. Data Operations
+		splitRowData(row)
+		  → Returns: {imageData, parsedData}
+
+		clearCollection(collectionName)
+		  → Returns: {cleared: number}
+
+		saveToCollection(collectionName, data)
+		  → Returns: {inserted: number}
+
+		// 6. Main Orchestrator (NEW - simplified)
+		splitAndSaveNormalizedData(normalizedRows)
+		  → Calls all helpers in sequence
+		  → ~60 lines total
+

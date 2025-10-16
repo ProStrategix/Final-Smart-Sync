@@ -1,0 +1,130 @@
+REFACTORING PLAN - FINAL APPROVAL
+Based on your feedback, here's my understanding of what needs to be done:
+
+SCOPE: ANALYSIS & CATEGORIZATION ONLY
+Current Problem:
+
+splitAndSaveNormalizedData() is 400+ lines doing TOO MUCH
+It analyzes images AND saves to collections
+We need to STOP BEFORE saving
+Solution:
+
+Refactor to ONLY analyze and categorize
+Return categorization results with 6 cases
+Remove ALL collection save operations
+THE 6 CASES TO IDENTIFY:
+
+// CASE 1: ALL 3rd party callable URLs
+{
+  caseType: "ALL_CALLABLE",
+  callableUrls: [...],
+  instructions: "All images are external URLs ready for processing"
+}
+
+// CASE 2: ALL Wix URLs
+{
+  caseType: "ALL_WIX",
+  wixUrls: [...],
+  instructions: "All images are Wix URLs - need SmartSync app or manual conversion"
+}
+
+// CASE 3: NO URLs &/OR NO local files
+{
+  caseType: "NO_IMAGES",
+  emptyProducts: [...],
+  instructions: "No images found - add URLs or upload files"
+}
+
+// CASE 4: NO callable URLs (but has other types)
+{
+  caseType: "NO_CALLABLE",
+  wixUrls: [...],
+  emptyProducts: [...],
+  instructions: "Mix of Wix URLs and missing images"
+}
+
+// CASE 5: ALL local files
+{
+  caseType: "ALL_LOCAL",
+  localFiles: [...],
+  instructions: "All images are local files ready for upload"
+}
+
+// CASE 6: MIX of 1 or more types
+{
+  caseType: "MIXED",
+  callableUrls: [...],
+  wixUrls: [...],
+  emptyProducts: [...],
+  localFiles: [...],
+  instructions: "Multiple image types detected - see breakdown"
+}
+REFACTORED STRUCTURE:
+
+// NEW: Main function (orchestrator only - ~60 lines)
+export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
+  // 1. Ensure IDs (enhance existing logic)
+  const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
+  
+  // 2. Analyze images
+  const analysis = analyzeImageUrls(processedRows);
+  
+  // 3. Determine case type
+  const caseType = determineCaseType(analysis);
+  
+  // 4. Return results with instructions
+  return buildCaseResult(caseType, analysis, processedRows);
+});
+
+// HELPER: Ensure IDs (enhances existing rowId from normalizeCsv)
+function ensureValidIds(rows) { ... }
+
+// HELPER: Analyze images (extracts existing inline logic)
+function analyzeImageUrls(rows) {
+  return {
+    wixUrls: [],
+    callableUrls: [],
+    localFiles: [],
+    emptyOrInvalid: []
+  };
+}
+
+// HELPER: Determine which of 6 cases applies
+function determineCaseType(analysis) { ... }
+
+// HELPER: Build result object with instructions
+function buildCaseResult(caseType, analysis, rows) { ... }
+
+// HELPER: Check if Wix URL (extract existing)
+function isWixMediaUrl(url) { ... }
+
+// HELPER: Check if callable URL (extract existing)
+function isValidCallableUrl(url) { ... }
+WHAT GETS REMOVED:
+❌ ALL collection operations (elevatedQuery, elevatedBulkRemove, elevatedBulkInsert)
+❌ ALL saving logic (Steps 2-6 in current function)
+❌ Early returns that save data
+❌ splitRowData operations
+
+WHAT GETS KEPT:
+✅ ID validation/generation logic
+✅ Image URL analysis logic
+✅ Logging (postEntryBE calls)
+✅ Error handling (try/catch)
+
+QUESTIONS:
+SEE BELOW ON STRUCTURE 
+
+Local Files Detection: How do we detect local files vs URLs? Is there a pattern like file:// or specific field?  WE WILL HAVE TO INFER BASED ON THE BEGINNING AN ENDING OF THE FILE NAME (LACKS A PROTOCOL, HAS A DIRECTORY NAME THAT IS LETTER BASED C: , D:,..., ENDS WITH A FILE EXTENSION CLEARLY LINKED TO A GRAPHIC FILE JPEG, PNG, SVG, WEBP, ETC.
+
+Function Name: Should I rename splitAndSaveNormalizedData to analyzeImageData to reflect new purpose? YES. THINK IT IS IMPORTANT TO BE CLEAR.. MY THOUGHTS REGARDING FUNCTION NAMES
+
+1. PARSE CSV
+2. NORMALIZE CSV
+3. VALIDATE CSV (MUST HAVE A CORE SET OF ATTRIBUTES) ==> MISSING ==> REDIRECT TO PENDING CORRECTIONS STATE
+4. CLASSIFY IMAGES
+5. REPORT (FINAL)
+
+Frontend Changes: Should splitAndSaveData() in dataManagement.js also be updated to handle 6 cases? LESS CONCERNED ABOUT THE # AND SHOULD BE ABLE TO BE MODIFIED AS WE LEARN.
+
+Backward Compatibility: Any existing code calling splitAndSaveNormalizedData - should I keep old function and create new one, or replace entirely? CREATE NEW => FIRST COPY , EDIT COPY (NEVER!!! EDIT THE BASE APP)

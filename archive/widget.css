@@ -1,0 +1,157 @@
+/* CSS documentation: https://dev.wix.com/docs/build-apps/develop-your-app/frameworks/wix-blocks/code-in-blocks/css-editing-in-blocks */
+ 
+/* These CSS styles will be applied globally to every element in this app. Write your CSS here, e.g.: */
+  
+/* Change button background color to red: */
+/*.button { 
+    background-color: red; 
+} */
+.gradient {
+  background-image: linear-gradient(
+    315deg,
+    hsl(209deg 100% 55%) 0%,
+    hsl(209deg 97% 54%) 9%,
+    hsl(209deg 94% 54%) 18%,
+    hsl(209deg 90% 52%) 27%,
+    hsl(209deg 82% 50%) 36%,
+    hsl(209deg 82% 47%) 45%,
+    hsl(209deg 82% 44%) 55%,
+    hsl(209deg 82% 42%) 64%,
+    hsl(209deg 82% 39%) 73%,
+    hsl(209deg 82% 37%) 82%,
+    hsl(209deg 82% 34%) 91%,
+    hsl(209deg 82% 31%) 100%
+  );
+}
+
+.gradient2 {
+  background-image: linear-gradient(
+    315deg,
+    hsl(212deg 60% 95%) 0%,
+    hsl(212deg 60% 95%) 13%,
+    hsl(212deg 60% 95%) 25%,
+    hsl(212deg 60% 95%) 37%,
+    hsl(212deg 60% 95%) 50%,
+    hsl(213deg 45% 94%) 63%,
+    hsl(213deg 36% 92%) 75%,
+    hsl(214deg 30% 91%) 87%,
+    hsl(214deg 25% 89%) 100%
+  );
+}
+
+.gradient3 {
+  background-image: linear-gradient(
+    315deg,
+    hsl(212deg 60% 95%) 0%,
+    hsl(212deg 60% 96%) 15%,
+    hsl(212deg 60% 98%) 23%,
+    hsl(212deg 60% 99%) 31%,
+    hsl(0deg 0% 100%) 38%,
+    hsl(214deg 36% 98%) 46%,
+    hsl(214deg 36% 96%) 56%,
+    hsl(214deg 35% 94%) 68%,
+    hsl(214deg 35% 92%) 100%
+  );
+}
+
+.msbox {
+    border-radius: 10px;
+    border: 2px solid #BECDE2;
+}
+
+ .upload-button .gradient {
+   background-image: linear-gradient(
+    315deg,
+    hsl(209deg 100% 55%) 0%,
+    hsl(209deg 97% 54%) 9%,
+    hsl(209deg 94% 54%) 18%,
+    hsl(209deg 90% 52%) 27%,
+    hsl(209deg 82% 50%) 36%,
+    hsl(209deg 82% 47%) 45%,
+    hsl(209deg 82% 44%) 55%,
+    hsl(209deg 82% 42%) 64%,
+    hsl(209deg 82% 39%) 73%,
+    hsl(209deg 82% 37%) 82%,
+    hsl(209deg 82% 34%) 91%,
+    hsl(209deg 82% 31%) 100%
+  );
+  border-radius: 6px;
+  border: 2px black solid;
+} 
+
+.progress-box {
+  background-color: aliceblue;
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+.imageConvertList {
+  scrollbar-width: thin;
+  padding: 1%;
+  border-radius: 6px;
+}
+
+.main_button {
+  background-image: linear-gradient(
+    0deg,
+    hsl(215deg 63% 53%) 0%,
+    hsl(215deg 56% 50%) 1%,
+    hsl(215deg 56% 48%) 2%,
+    hsl(215deg 56% 45%) 6%,
+    hsl(215deg 55% 42%) 14%,
+    hsl(214deg 55% 40%) 27%,
+    hsl(214deg 55% 37%) 50%,
+    hsl(214deg 55% 40%) 73%,
+    hsl(215deg 55% 42%) 86%,
+    hsl(215deg 56% 45%) 93%,
+    hsl(215deg 56% 48%) 97%,
+    hsl(215deg 56% 50%) 99%,
+    hsl(215deg 63% 53%) 100%
+  );
+  color: "#ffffff";
+  border: 4px rgb(195, 206, 246) solid;
+  width: 200px;
+  height: 40px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 8px;
+  box-shadow: 1px 1px 4px 1px #031F4A;
+}
+ .text-box {
+  border-radius: 8px; 
+   /* To learn more about CSS classes, visit https://support.wix.com/en/article/css-editing. Write your CSS here: */
+} 
+
+.spinner {
+    border: 4px solid #468ff3;
+    border-top-color: #2a5590;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+  transform: rotate(360deg);
+  }
+}
+
+/* Styling the entire scrollbar */
+::-webkit-scrollbar {
+  width: 12px; /* width of the scrollbar */
+}
+
+/* Styling the scrollbar track */
+::-webkit-scrollbar-track {
+  background: #f0f6ff /* color of the tracking area */
+}
+
+/* Styling the scrollbar thumb */
+::-webkit-scrollbar-thumb {
+  background-color: #2b5794; /* color of the scroll thumb */
+  border-radius: 6px; /* roundness of the scroll thumb */
+}
+
+/* Styling the scrollbar thumb on hover */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #FF9F07;
+}
