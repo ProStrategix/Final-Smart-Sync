@@ -4,77 +4,7 @@ import { postEntry } from 'public/logManagement.js';
 import { goTo, pushMessage } from 'public/stateManager.js';
 import { v4 as uuidv4 } from 'uuid';
 import { splitAndSaveNormalizedData } from 'backend/dataConverter.web.js';
-import { pause } from '../archive/stateManagement';
-
-let messages = []; // Initialize messages array for this module
-
-const A = "@prostrategix/smartsync-ecommerce/ParsedData";
-const B = "@prostrategix/smartsync-ecommerce/WixImageURLs";
-const loc = "dataManagement.js";
-
-export async function uploadAccessCsv(file) {
-                console.log ("file name: ", file.fileName)
-                console.log ("url :", file.fileUrl)
-                console.log( 'old file name: ', file.originalFileName)
-                pushMessage(messages, "success", "CSV file was successfully uploaded.", "✅")
-                postEntry("CSV file was successfullly uploaded in Media Manager", "success", loc, null)
-                // Note: State change handled in app.js - removing widget reference
-                
-                const { success, downloadUrl, error } = await getUrl(file.fileUrl);
-    
-                 if (!success) {
-                    console.error("Failed to resolve download URL:", error);
-                    postEntry("CSV file was successfullly uploaded in Media Manager", "error", "getUrl() in dataConverter.web.js", null)
-                    return;
-                }
-                
-                console.log("Fetchable download URL:", downloadUrl);
-                postEntry("fetchable url was provided to the csv content", "success", "getUrl", null)
-                const response = await fetch(downloadUrl);
-                const text = await response.text();
-                console.log("CSV contents:", text);
-                console.log("CSV Text Length:", text?.length);
-                console.log("CSV Sample:", text?.slice(0, 100));
-                pushMessage(messages, "success", "CSV file was successfully accessed.", "✅")
-                postEntry("CSV file was successfullly accessed and text extracted", "success", "widget.js", null)
-                return text
-            }
-
-export async function processCsv(csvText) {
-   const rawParse = await parseCsv(csvText)
-    let parsed = JSON.parse(rawParse)
-    let schemaMap = await getSchemaMap()
-    console.log('data heading to normalization: ' , parsed, ' vs map: ', schemaMap)
-    postEntry("Csv data has been parsed and schema map created", 'success',"dataManagement.js", null)
-    let normalizedRaw = await normalizeCsv(parsed.headers, parsed.rows, schemaMap)
-    let normalize = normalizedRaw
-    console.log('normalized data: ', normalize)
-    postEntry("Csv data has been normalized", 'success',"dataManagement.js", null)
-    
-    // Check for missing essential headers first
-    if (normalize.missingEssentialHeaders && normalize.missingEssentialHeaders.length > 0) {
-        console.warn("Missing essential headers detected:", normalize.missingEssentialHeaders);
-        pushMessage(messages, "warning", `Missing ${normalize.missingEssentialHeaders.length} essential headers`, "⚠️");
-        postEntry(`Missing essential headers: ${normalize.missingEssentialHeaders.join(", ")}`, 'warning', loc, null);
-        await reportMissingHeaders(normalize.missingEssentialHeaders);
-        return { success: false, error: "Missing essential headers", missingHeaders: normalize.missingEssentialHeaders };
-    }
-    
-    // Check for normalized rows
-    if (normalize.normalizedRows?.length > 0) {
-        pushMessage(messages, "success", "CSV data has been normalized.", "✅")
-        postEntry("Data have been normalized", 'success',"dataConverter.web.js", null)
-        await pause (1000)
-        return {data: normalize, success: true}
-    } else {
-        console.error("No normalized rows found after normalization.");
-        postEntry("No normalized rows found after normalization.", 'error', loc, null);
-        pushMessage(messages, "error", "No normalized rows found after normalization.", "❌");
-        goTo("ERROR");
-       
-    }    
-    return { success: false, error: "No normalized rows found after normalization." };
-}
+import { processAndSaveImages } from 'backend/imageConverter.web.js';
 
 export async function getSchemaMap() {
   const schemaMap = {};
@@ -570,4 +500,3 @@ async function processImagesWithTicker(callableUrls) {
     throw err;
   }
 }
-

@@ -886,32 +886,32 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
 
       try {
         // Step 2: Clear BOTH collections first
-        const existingParsedData = await elevatedQuery('@prostrategix/smartsync-ecommerce/ParsedData')
+        const existingParsedData = await elevatedQuery('@prostrategix/smartsync-product-transfer/ParsedData')
           .limit(1000)
           .find();
         
         if (existingParsedData.items.length > 0) {
           const idsToRemove = existingParsedData.items.map(item => item._id);
-          await elevatedBulkRemove('@prostrategix/smartsync-ecommerce/ParsedData', idsToRemove);
+          await elevatedBulkRemove('@prostrategix/smartsync-product-transfer/ParsedData', idsToRemove);
           await postEntryBE("info", `Cleared ${idsToRemove.length} existing parsed records`, {
             location: "dataConverter.web.js"
           });
         }
 
-        const existingPending = await elevatedQuery('@prostrategix/smartsync-ecommerce/PendingImageUrls')
+        const existingPending = await elevatedQuery('@prostrategix/smartsync-product-transfer/PendingImageUrls')
           .limit(1000)
           .find();
         
         if (existingPending.items.length > 0) {
           const idsToRemove = existingPending.items.map(item => item._id);
-          await elevatedBulkRemove('@prostrategix/smartsync-ecommerce/PendingImageUrls', idsToRemove);
+          await elevatedBulkRemove('@prostrategix/smartsync-product-transfer/PendingImageUrls', idsToRemove);
           await postEntryBE("info", `Cleared ${idsToRemove.length} existing pending image URLs`, {
             location: "dataConverter.web.js"
           });
         }
 
         // Step 3: Save parsed data to ParsedData collection
-        const parsedInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-ecommerce/ParsedData', parsedData);
+        const parsedInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-product-transfer/ParsedData', parsedData);
         await postEntryBE("info", "Parsed data saved successfully", {
           insertedCount: parsedInsertResult.inserted,
           location: "dataConverter.web.js"
@@ -926,7 +926,7 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
           rowId: item.rowId // Include rowId for cross-collection matching
         }));
 
-        const pendingInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-ecommerce/PendingImageUrls', pendingUrls);
+        const pendingInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-product-transfer/PendingImageUrls', pendingUrls);
         await postEntryBE("info", "Pending image URLs saved successfully", {
           insertedCount: pendingInsertResult.inserted,
           location: "dataConverter.web.js"
@@ -989,19 +989,19 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
     // Step 4: Save A to WixImageURLs collection (NOT PendingImageUrls)
     // Since images are already Wix URLs, they go directly to final collection
     try {
-      const existingImageData = await elevatedQuery('@prostrategix/smartsync-ecommerce/WixImageURLs')
+      const existingImageData = await elevatedQuery('@prostrategix/smartsync-product-transfer/WixImageURLs')
         .limit(1000)
         .find();
       
       if (existingImageData.items.length > 0) {
         const idsToRemove = existingImageData.items.map(item => item._id);
-        await elevatedBulkRemove('@prostrategix/smartsync-ecommerce/WixImageURLs', idsToRemove);
+        await elevatedBulkRemove('@prostrategix/smartsync-product-transfer/WixImageURLs', idsToRemove);
         await postEntryBE("info", `Cleared ${idsToRemove.length} existing image records from WixImageURLs`, {
           location: "dataConverter.web.js"
         });
       }
 
-      const imageInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-ecommerce/WixImageURLs', imageData);
+      const imageInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-product-transfer/WixImageURLs', imageData);
       await postEntryBE("info", "Image data saved to WixImageURLs (already Wix URLs)", {
         insertedCount: imageInsertResult.inserted,
         location: "dataConverter.web.js"
@@ -1016,19 +1016,19 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
 
     // Step 5: Save B to ParsedData collection using elevated permissions
     try {
-      const existingParsedData = await elevatedQuery('@prostrategix/smartsync-ecommerce/ParsedData')
+      const existingParsedData = await elevatedQuery('@prostrategix/smartsync-product-transfer/ParsedData')
         .limit(1000)
         .find();
       
       if (existingParsedData.items.length > 0) {
         const idsToRemove = existingParsedData.items.map(item => item._id);
-        await elevatedBulkRemove('@prostrategix/smartsync-ecommerce/ParsedData', idsToRemove);
+        await elevatedBulkRemove('@prostrategix/smartsync-product-transfer/ParsedData', idsToRemove);
         await postEntryBE("info", `Cleared ${idsToRemove.length} existing parsed records`, {
           location: "dataConverter.web.js"
         });
       }
 
-      const parsedInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-ecommerce/ParsedData', parsedData);
+      const parsedInsertResult = await elevatedBulkInsert('@prostrategix/smartsync-product-transfer/ParsedData', parsedData);
       await postEntryBE("info", "Parsed data saved successfully", {
         insertedCount: parsedInsertResult.inserted,
         location: "dataConverter.web.js"

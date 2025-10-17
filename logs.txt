@@ -1,0 +1,109 @@
+[
+  {
+    "date": "2025-10-17T04:02:20.503Z",
+    "message": "2025-10-17T04:02:20.503Z",
+    "level": "Log initialized",
+    "source": "info",
+    "_id": "813a776c-1420-4ad6-8d4a-a4b81be24c39",
+    "icon": "ℹ️",
+    "stackTrace": "Log Management Module"
+  },
+  {
+    "date": "2025-10-17T04:02:49.356Z",
+    "message": "CSV file was successfullly uploaded in Media Manager",
+    "level": "success",
+    "source": "dataManagement.js",
+    "_id": "aef3b55e-f682-4a20-b157-19c9a7d3cd84",
+    "icon": "✅"
+  },
+  {
+    "date": "2025-10-17T04:02:53.414Z",
+    "message": "fetchable url was provided to the csv content",
+    "level": "success",
+    "source": "getUrl",
+    "_id": "fb0776c1-4062-4ea7-b123-a6281f1ec2b0",
+    "icon": "✅"
+  },
+  {
+    "date": "2025-10-17T04:02:53.596Z",
+    "message": "CSV file was successfullly accessed and text extracted",
+    "level": "success",
+    "source": "widget.js",
+    "_id": "6d25cf59-96bf-4e0d-8cd4-b03bda76f69f",
+    "icon": "✅"
+  },
+  {
+    "date": "2025-10-17T04:02:53.835Z",
+    "message": "Csv data has been parsed and schema map created",
+    "level": "success",
+    "source": "dataManagement.js",
+    "_id": "cac9831e-3b47-4d4b-a10e-40e9168fd3b1",
+    "icon": "✅"
+  },
+  {
+    "date": "2025-10-17T04:02:56.530Z",
+    "message": "Csv data has been normalized",
+    "level": "success",
+    "source": "dataManagement.js",
+    "_id": "472ed892-77ff-4204-b64c-e9662aa14220",
+    "icon": "✅"
+  },
+  {
+    "date": "2025-10-17T04:02:56.532Z",
+    "message": "Missing essential headers: bestSellers",
+    "level": "warning",
+    "source": "dataManagement.js",
+    "_id": "1239e63f-9576-4eaa-b47f-6f029c0385be",
+    "icon": "⚠️"
+  },
+  {
+    "date": "2025-10-17T04:02:56.533Z",
+    "message": "Querying MissingEssential collection for headers: bestsellers",
+    "level": "info",
+    "source": "dataManagement.js",
+    "_id": "6ebb4d4c-bb5e-4503-8647-f09211f59f3a",
+    "icon": "ℹ️"
+  },
+  {
+    "date": "2025-10-17T04:02:56.840Z",
+    "message": "MissingEssential collection returned 8 total records",
+    "level": "info",
+    "source": "dataManagement.js",
+    "_id": "6efb953b-274b-4f5b-b3b6-a30b521fa5bd",
+    "icon": "ℹ️"
+  },
+  {
+    "date": "2025-10-17T04:02:56.840Z",
+    "message": "Found 0 matching guidance records",
+    "level": "info",
+    "source": "dataManagement.js",
+    "_id": "a5ea3e73-e503-4f60-bc33-63866ce2a50a",
+    "icon": "ℹ️"
+  },
+  {
+    "date": "2025-10-17T04:02:56.841Z",
+    "message": "No guidance found in MissingEssential collection. Creating default entries.",
+    "level": "warning",
+    "source": "dataManagement.js",
+    "_id": "45ed4f77-5e1b-46ae-8141-a6cd9ca17fa7",
+    "icon": "⚠️"
+  },
+  {
+    "date": "2025-10-17T04:02:56.841Z",
+    "message": "Error in reportMissingHeaders: $w(...).onItemReady is not a function",
+    "level": "error",
+    "source": "dataManagement.js",
+    "_id": "50566ca1-44d7-414f-b044-5b076a73ec45",
+    "icon": "❌",
+    "stackTrace": "TypeError: $w(...).onItemReady is not a function\n    at _callee6$ (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1657:43)\n    at tryCatch (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:2432)\n    at Generator._invoke (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:1992)\n    at Generator.next (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:3283)\n    at dataManagement_asyncGeneratorStep (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1148:118)\n    at _next (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1150:208)"
+  },
+  {
+    "date": "2025-10-17T04:02:56.842Z",
+    "message": "CSV upload failed: $w(...).onItemReady is not a function",
+    "level": "error",
+    "source": "widget.js",
+    "_id": "f575b2d7-6098-4dab-820e-5df6e27fb66d",
+    "icon": "❌",
+    "stackTrace": "TypeError: $w(...).onItemReady is not a function\n    at _callee6$ (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1657:43)\n    at tryCatch (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:2432)\n    at Generator._invoke (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:1992)\n    at Generator.next (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1146:3283)\n    at dataManagement_asyncGeneratorStep (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1148:118)\n    at _next (https://9a3c42bf-d8f9-4169-b567-1028c95dae87.dev.wix-code.com/pages/zsj1t.js?viewMode=preview&instance=wixcode-dev.53fb92fad4f750c54a3964b202b268086124f478.eyJpbnN0YW5jZUlkIjoiOWEzYzQyYmYtZDhmOS00MTY5LWI1NjctMTAyOGM5NWRhZTg3IiwiY29ycmVsYXRpb25JZCI6IjIyMWUxZDQwLTNiNTYtNGUyZS1hZjhjLTQyZWMxMDRhZmY5ZCIsInNlc3Npb25VSWQiOiJhYjlkNGQzNC1iMzcwLTQ2NzktYmVkZS0wOWYxNGNhMjhmYTEiLCJpc1RlbXBsYXRlIjpmYWxzZSwic2lnbkRhdGUiOjE3NjA2NzE1MDYyNjEsInNpdGVNZW1iZXJJZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsInVpZCI6ImFiOWQ0ZDM0LWIzNzAtNDY3OS1iZWRlLTA5ZjE0Y2EyOGZhMSIsImFwcERlZklkIjoiQ2xvdWRTaXRlRXh0ZW5zaW9uIiwiaXNBZG1pbiI6dHJ1ZSwibWV0YVNpdGVJZCI6ImQwMjE1YzkzLTBhNzQtNDU3NS04ZDg5LWUyNTdhNDkyZTFmMSIsImNhY2hlIjpudWxsLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMTAtMTdUMDc6MjU6MDYuMjYxWiIsInNpdGVPd25lcklkIjoiYWI5ZDRkMzQtYjM3MC00Njc5LWJlZGUtMDlmMTRjYTI4ZmExIiwiaW5zdGFuY2VUeXBlIjoiZGV2IiwicGVybWlzc2lvblNjb3BlIjpudWxsLCJzaXRlQ3JlYXRlZERhdGUiOiIyMDI1LTEwLTE2VDE1OjE0OjQ3LjY1NFoiLCJhY2NvdW50Q3JlYXRlZERhdGUiOiIyMDIxLTAzLTI2VDEyOjA2OjQyWiIsInNpdGVTY29wZWQiOm51bGwsInNlc3Npb25JZCI6bnVsbH0=&gridAppId=d4204786-b0f2-46a5-8fe5-348c621eb364&init-platform-api-provider=true&get-app-def-id-from-package-name=false&disable-yarn-pnp-mode=false:1150:208)"
+  }
+]
