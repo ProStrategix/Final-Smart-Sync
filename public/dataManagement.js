@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { splitAndSaveNormalizedData } from 'backend/dataConverter.web.js';
 import { pause } from '../archive/stateManagement';
 
+let messages = []; // Initialize messages array for this module
+
 const A = "@prostrategix/smartsync-ecommerce/ParsedData";
 const B = "@prostrategix/smartsync-ecommerce/WixImageURLs";
 const loc = "dataManagement.js";
@@ -16,7 +18,7 @@ export async function uploadAccessCsv(file) {
                 console.log( 'old file name: ', file.originalFileName)
                 pushMessage(messages, "success", "CSV file was successfully uploaded.", "✅")
                 postEntry("CSV file was successfullly uploaded in Media Manager", "success", loc, null)
-                $w("#msbox").changeState("STATUSTRACK")
+                // Note: State change handled in app.js - removing widget reference
                 
                 const { success, downloadUrl, error } = await getUrl(file.fileUrl);
     

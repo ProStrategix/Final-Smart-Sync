@@ -1,0 +1,43 @@
+
+WIX BLOCKS CONTROLLER INTEGRATION - STRATEGY NOTE
+
+Purpose:
+This file documents a strategic pivot in widget architecture based on the discovery of Wix Blocks' `controller.js` functionality.
+
+Key Insight:
+The `controller.js` file enables runtime interaction between a Wix Blocks widget and the page/site context. This allows the widget to behave like a page component while remaining modular and editable in Studio.
+
+Why This Matters:
+- You had difficulties passing functionality into and out of a widget when it was embedded on a page.
+- You need access to page-level state, site member data, navigation, or external APIs.
+- The `controller.js` solves these issues by allowing:
+  - Access to `wix-location`, `wix-storage`, `wix-members`, etc.
+  - Passing props into the widget at runtime using `compRef.updateProps()`.
+  - Custom logic to initialize widget state based on the site/page environment.
+
+Examples of What the Controller Can Do:
+- Get current site member
+- Detect page URL or query params
+- Preload or transform props before rendering
+- Pass dynamic data to the widget frontend
+- Make the widget act like a smart, context-aware page
+
+Next Steps When Ready:
+1. Create a `controller.js` at the root of the widget.
+2. Add to `config.json`:
+   "controllerFileName": "controller.js"
+3. Scaffold basic controller logic with `entry({ compRef, controllerConfig })`.
+4. Use `compRef.updateProps()` to send dynamic data into the widget.
+5. Update the widget’s `structure.json` to receive those props.
+
+Trigger Reminder:
+When returning, show this file to the assistant (or paste its contents) and ask to resume controller-based architecture with:
+- A starter controller template
+- Full `config.json` alignment
+- Widget runtime-to-frontend data bridge
+
+This change will fundamentally revise how the widget is built and resolve earlier communication limitations.
+
+KEEP THIS FILE SAFE.
+
+- Velo Virtuoso

@@ -4,15 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 let _statusRepeaterBound = false;
 let _imageProcessingRepeaterBound = false;
 const state = $w('#msbox')
-export const states = [  "INIT",
-  "CSVUPLOADED",
-  "STATUSTRACK",
+export const states = [  "START",
+ "PROCESSDATA",
+ "DATAREPORT",
+ "RETRIEVEIMGS",
+ "CONVERT",
+ "COMPILE",
+ "REVIEW",
+ "TRANSMIT",
+ "FINISHRESET",
+ "ERRORMISSINGDATA",
+ "ERRORMISSINGIMAGES",
   "ERRORMISSINGHEADERS",
-  "ERRORMISSINGIMAGES",
-  "PROCESSING",
-  "MATCH",
-  "TRANSMITTED",
-  "DONE",
   "ERRORREPORT",
   "ERROR"
   ]

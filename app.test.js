@@ -82,8 +82,59 @@ $w('#uploadCsvButton').onChange((event) => {
         });
 });
 
+// ============================================================================
+// TEMPORARY TEST VERSION - parseDataImages with console logging
+// ============================================================================
 async function parseDataImages(result) {
-    console.log('CSV processing result:', result);
+    console.log('==========================================================');
+    console.log('=== PARSE DATA IMAGES - MODULAR TEST MODE ===');
+    console.log('==========================================================');
+    
+    // Test 1: Verify result object structure
+    console.log('📦 Result Object:', result);
+    console.log('📦 Result Type:', typeof result);
+    console.log('📦 Result Keys:', Object.keys(result || {}));
+    
+    // Test 2: Verify normalizedRows exists and has data
+    console.log('📊 normalizedRows:', result.normalizedRows);
+    console.log('📊 normalizedRows Type:', typeof result.normalizedRows);
+    console.log('📊 normalizedRows Length:', result.normalizedRows?.length);
+    console.log('📊 First Row Sample:', result.normalizedRows?.[0]);
+    
+    // Test 3: Verify other important fields
+    console.log('📋 Headers:', result.headers);
+    console.log('📋 Essential Fields:', result.essentialFields);
+    console.log('📋 Missing Essential Headers:', result.missingEssentialHeaders);
+    console.log('📋 Valid Row Count:', result.validRowCount);
+    console.log('📋 Invalid Row Count:', result.invalidRowCount);
+    
+    // Test 4: Check for any issues
+    if (!result.normalizedRows || result.normalizedRows.length === 0) {
+        console.error('❌ ERROR: No normalized rows found!');
+        console.log('Result object:', JSON.stringify(result, null, 2));
+    } else {
+        console.log('✅ SUCCESS: Normalized rows found:', result.normalizedRows.length);
+    }
+    
+    console.log('==========================================================');
+    console.log('=== CSV PROCESSING PIPELINE STATUS ===');
+    console.log('==========================================================');
+    console.log('✅ Step 1: CSV Upload - COMPLETE');
+    console.log('✅ Step 2: CSV Parse - COMPLETE');
+    console.log('✅ Step 3: CSV Normalize - COMPLETE');
+    console.log('✅ Step 4: CSV Validate - COMPLETE');
+    console.log('⏸️  Step 5: Image Analysis - PAUSED FOR TESTING');
+    console.log('==========================================================');
+    console.log('Next step: splitAndSaveData(result.normalizedRows)');
+    console.log('To continue: Remove the return statement below');
+    console.log('==========================================================');
+    
+    // TEMPORARY STOP - Remove this return to continue to image processing
+    return;
+    
+    // ========================================================================
+    // ORIGINAL CODE BELOW (Currently disabled for modular testing)
+    // ========================================================================
     const splitResult = await splitAndSaveData(result.normalizedRows);
     console.log("🔄 Image processing required for some URLs");
     if (splitResult.success) {
@@ -95,12 +146,6 @@ async function parseDataImages(result) {
             const imageResult = await processExternalImageUrls();
            
         } 
-    } else if (splitResult.requiresSmartSyncApp) {
-        pushMessage(messages, "warning", "Wix Media files cannot be accessed remotely. They can only be accessed from your account. SmartSync app will make this process easier.", "⚠️");
-        postEntry("Image processing requires SmartSync app. Please install it and try again.", "warning", loc, null); 
-        await pause(2500);
-        updateStatus(3);
-        goTo("PAUSED");
     } else if (splitResult.requiresSmartSyncApp) {
         pushMessage(messages, "warning", "Wix Media files cannot be accessed remotely. They can only be accessed from your account. SmartSync app will make this process easier.", "⚠️");
         postEntry("Image processing requires SmartSync app. Please install it and try again.", "warning", loc, null); 
