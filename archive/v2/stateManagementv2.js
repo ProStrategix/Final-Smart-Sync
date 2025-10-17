@@ -1,14 +1,22 @@
 //import wixWidget from "wix-widget"
 import { v4 as uuidv4 } from 'uuid';
+import { postEntry } from 'public//logManagement.js';
 
 let _statusRepeaterBound = false;
 let _imageProcessingRepeaterBound = false;
 const state = $w('#msbox')
-export const states = [  "INIT",
-  "CSVUPLOADED",
-  "STATUSTRACK",
+export const states = [  "START",
+ "PROCESSDATA",
+ "DATAREPORT",
+ "RETRIEVEIMGS",
+ "CONVERT",
+ "COMPILE",
+ "REVIEW",
+ "TRANSMIT",
+ "FINISHRESET",
+ "ERRORMISSINGDATA",
+ "ERRORMISSINGIMAGES",
   "ERRORMISSINGHEADERS",
-  "ERRORMISSINGIMAGES",
   "PROCESSING",
   "MATCH",
   "TRANSMITTED",
@@ -17,30 +25,14 @@ export const states = [  "INIT",
   "ERROR"
   ]
 
-let sIndex = states.findIndex(x => x === state.currentState) ;
-sIndex < 0 ? sIndex = 0 : sIndex;
-let log;
+
 
 let tstamp = (new Date()).toDateString()
 
-export function move(direction) {
-   console.log('state index: ', sIndex)
-  if (direction === "back" && sIndex > 0) {
-    sIndex--;
-  } else if (direction === "forward" && sIndex < states.length - 1) {
-    sIndex++;
-  }
-  console.log('state index: ', sIndex)
-  goTo(states[sIndex])
-  updateNavButtons();
-}
-
-// $w('#back').onClick(() => move("back"));
-// $w('#forward').onClick(() => move("forward"));
-
-export async function updateNavButtons() {
-  sIndex <= 0 ? $w("#back").hide() : $w("#back").show();
-  sIndex === states.length - 1 ? $w("#forward").hide() : $w("#forward").show();
+export function logStateChange(oldState, newState) {
+    const message = `State changed from ${oldState} to ${newState} at ${tstamp}`;
+    postEntry(message, "info", "State Management Module", null)
+    console.log(message);
 }
 
 export function pause(ms = 1500) {
@@ -52,7 +44,7 @@ export async function goTo(newState) {
         $widget.props.state = newState
         console.log('props set to', $widget.props.state)
         state.changeState(newState)
-        updateNavButtons()
+        logStateChange(state.currentState, newState)
         return `Successful changed state to ${newState}`
     }
     return `Failed to change state to ${newState}`
@@ -96,7 +88,7 @@ export function bindStatusRepeaterOnce() {
     }
     
     // Bind the item ready handler
-    repeater.onItemReady(($item, itemData) => {
+    repeater.onItemReady(($item, itemData, index) => {
       // message text
       $item("#statusText").text = itemData.message;
 

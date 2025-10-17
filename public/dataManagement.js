@@ -1,15 +1,87 @@
 import wixData from 'wix-data';
 import Papa from 'papaparse';
 import { postEntry } from 'public/logManagement.js';
-import { goTo, pushMessage } from 'public/stateManager.js';
+import { goTo, pushMessage, pause } from 'public/stateManagement.js';
 import { v4 as uuidv4 } from 'uuid';
-import { splitAndSaveNormalizedData } from 'backend/dataConverter.web.js';
+import { splitAndSaveNormalizedData, normalizeCsv, getUrl } from 'backend/dataProcessor.web.js';
 import { processAndSaveImages } from 'backend/imageConverter.web.js';
+
+const A = "@prostrategix/smartsync-product-transfer/ParsedData";
+const B = "@prostrategix/smartsync-product-transfer/WixImageURLs";
+const loc = "dataManagement.js";
+let stat = 1
+
+
+export async function uploadAccessCsv(file, messages) {
+                console.log ("file name: ", file.fileName)
+                console.log ("url :", file.fileUrl)
+                console.log( 'old file name: ', file.originalFileName)
+                if (messages) pushMessage(messages, "success", "CSV file was successfully uploaded.", "✅")
+                goTo("PROCESSDATA")
+                postEntry("CSV file was successfullly uploaded in Media Manager", "success", loc, null)
+                
+                const { success, downloadUrl, error } = await getUrl(file.fileUrl);
+    
+                 if (!success) {
+                    console.error("Failed to resolve download URL:", error);
+                    postEntry("CSV file was successfullly uploaded in Media Manager", "error", "getUrl() in dataConverter.web.js", null)
+                    return;
+                }
+                
+                console.log("Fetchable download URL:", downloadUrl);
+                postEntry("fetchable url was provided to the csv content", "success", "getUrl", null)
+                const response = await fetch(downloadUrl);
+                const text = await response.text();
+                console.log("CSV contents:", text);
+                console.log("CSV Text Length:", text?.length);
+                console.log("CSV Sample:", text?.slice(0, 100));
+                if (messages) pushMessage(messages, "success", "CSV file was successfully accessed.", "✅")
+               $w("#statusBox1").style.backgroundColor = "none "
+              $w("#statusBox2").style.backgroundColor = "#D5E0F5"
+              $w("#statusBox3").style.backgroundColor = "none " 
+                postEntry("CSV file was successfullly accessed and text extracted", "success", "widget.js", null)
+                return text
+}
+
+export async function processCsv(csvText, messages) {
+   const rawParse = await parseCsv(csvText)
+    let parsed = JSON.parse(rawParse)
+    let schemaMap = await getSchemaMap()
+    console.log('data heading to normalization: ' , parsed, ' vs map: ', schemaMap)
+    postEntry("Csv data has been parsed and schema map created", 'success',"dataManagement.js", null)
+    let normalizedRaw = await normalizeCsv(parsed.headers, parsed.rows, schemaMap)
+    $w("#statusBox2").style.backgroundColor = "none "
+    $w("#statusBox3").style.backgroundColor = "#D5E0F5"
+    let normalize = normalizedRaw
+    console.log('normalized data: ', normalize)
+    postEntry("Csv data has been normalized", 'success',"dataManagement.js", null)
+    
+    if (normalize.missingEssentialHeaders && normalize.missingEssentialHeaders.length > 0) {
+        console.warn("Missing essential headers detected:", normalize.missingEssentialHeaders);
+        if (messages) pushMessage(messages, "warning", `Missing ${normalize.missingEssentialHeaders.length} essential headers`, "⚠️");
+        postEntry(`Missing essential headers: ${normalize.missingEssentialHeaders.join(", ")}`, 'warning', loc, null);
+        await reportMissingHeaders(normalize.missingEssentialHeaders);
+        return { success: false, error: "Missing essential headers", missingHeaders: normalize.missingEssentialHeaders };
+    }
+    
+    if (normalize.normalizedRows?.length > 0) {
+        if (messages) pushMessage(messages, "success", "CSV data has been normalized.", "✅")
+        postEntry("Data have been normalized", 'success',"dataConverter.web.js", null)
+        await pause (1000)
+        return {data: normalize, success: true}
+    } else {
+        console.error("No normalized rows found after normalization.");
+        postEntry("No normalized rows found after normalization.", 'error', loc, null);
+        if (messages) pushMessage(messages, "error", "No normalized rows found after normalization.", "❌");
+        goTo("ERROR");
+    }    
+    return { success: false, error: "No normalized rows found after normalization." };
+}
 
 export async function getSchemaMap() {
   const schemaMap = {};
 
-  const results = await wixData.query('@prostrategix/smartsync-ecommerce/SchemaNormalization')
+  const results = await wixData.query('@prostrategix/smartsync-product-transfer/SchemaNormalization')
     .limit(1000)
     .find();
 
@@ -238,7 +310,7 @@ export async function reportMissingHeaders(missingHeaders) {
     );
 
     // Query all records from MissingEssential collection
-    let allGuidance = await wixData.query('@prostrategix/smartsync-ecommerce/MissingEssential')
+    let allGuidance = await wixData.query('@prostrategix/smartsync-product-transfer/MissingEssential')
       .limit(1000)
       .find();
 
@@ -280,19 +352,21 @@ export async function reportMissingHeaders(missingHeaders) {
     }
 
     //$w('#missingHeadersBox').expand();
-    $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
-      _id: uuidv4(),
-      field: item.header,
-      description: item.description,
-      solution: item.solution
-    }));
     
+    // FIX: Bind onItemReady BEFORE setting data
     $w("#missingHeadersRepeater").onItemReady( ($item, itemData, index) => {
       $item("#index").text = (index + 1).toString();
       $item("#header").text = itemData.field;
       $item("#description").text = itemData.description;
       $item("#solution").text = itemData.solution;
     });
+    
+    $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
+      _id: uuidv4(),
+      field: item.header,
+      description: item.description,
+      solution: item.solution
+    }));
     
     await postEntry(
       `Missing essential headers: ${missingHeaders.join(", ")}`,

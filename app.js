@@ -72,8 +72,8 @@ $w('#uploadCsvButton').onChange((event) => {
             result.success? pushMessage(messages, "success", "CSV processed successfully", "✅") : pushMessage(messages, "error", "CSV processing failed. "+result.message, "❌")
             postEntry("CSV processed. "+result.message, result.success? "success" : "error" , loc, null)
             console.log('Normalized data:', normalized);
-            updateStatus(2);
-            return parseDataImages(normalized)
+           // return parseDataImages(normalized)
+           return 
         })
         .catch((uploadError) => {
             console.error('❌ CSV upload failed:', uploadError);

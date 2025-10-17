@@ -1,5 +1,6 @@
 //import wixWidget from "wix-widget"
 import { v4 as uuidv4 } from 'uuid';
+import { postEntry } from 'public//logManagement.js';
 
 let _statusRepeaterBound = false;
 let _imageProcessingRepeaterBound = false;
@@ -24,30 +25,17 @@ export const states = [  "START",
   "ERROR"
   ]
 
-let sIndex = states.findIndex(x => x === state.currentState) ;
-sIndex < 0 ? sIndex = 0 : sIndex;
-let log;
+
 
 let tstamp = (new Date()).toDateString()
+let repeater = $w("#statusRepeater");
+// let imgRepeater = $w("#imageProcessingRepeater");
 
-export function move(direction) {
-   console.log('state index: ', sIndex)
-  if (direction === "back" && sIndex > 0) {
-    sIndex--;
-  } else if (direction === "forward" && sIndex < states.length - 1) {
-    sIndex++;
-  }
-  console.log('state index: ', sIndex)
-  goTo(states[sIndex])
-  updateNavButtons();
-}
 
-// $w('#back').onClick(() => move("back"));
-// $w('#forward').onClick(() => move("forward"));
-
-export async function updateNavButtons() {
-  sIndex <= 0 ? $w("#back").hide() : $w("#back").show();
-  sIndex === states.length - 1 ? $w("#forward").hide() : $w("#forward").show();
+export function logStateChange(oldState, newState) {
+    const message = `State changed from ${oldState} to ${newState} at ${tstamp}`;
+    postEntry(message, "info", "State Management Module", null)
+    console.log(message);
 }
 
 export function pause(ms = 1500) {
@@ -56,13 +44,13 @@ export function pause(ms = 1500) {
 
 export async function goTo(newState) {
     if(states.includes(newState)) {
-        $widget.props.state = newState
+        $widget.props.state = newState.toUpperCase();
         console.log('props set to', $widget.props.state)
-        state.changeState(newState)
-        updateNavButtons()
-        return `Successful changed state to ${newState}`
+        state.changeState(newState.toUpperCase())
+        logStateChange(state.currentState, newState.toUpperCase)
+        return `Successful changed state to ${newState.toUpperCase()}.`
     }
-    return `Failed to change state to ${newState}`
+    return `Failed to change state to ${newState.toUpperCase()}.`
 }
 
 /**
@@ -83,19 +71,32 @@ export function handleError(error, context = "") {
   $w("#spinnerBox").hide();
   
   // Go to error state
-  $widget.props.state = "error";
-  goTo("error");
+goTo("error");
+}
+export function handleError(error, context = "") {
+  console.error(`Error ${context ? "in " + context : ""}:`, error);
+  
+  // Safely extract error properties
+  const errorCode = (error && error.errorCode) || "UNKNOWN";
+  const errorMessage = (error && (error.errorDescription || error.message)) || "Unknown error";
+  
+  // Update UI elements
+  $w("#statusText").text = `Error occurred${context ? " during " + context : ""}`;
+  $w("#errorMsg").text = `${errorMessage} (Code: ${errorCode})`;
+  $w("#spinnerBox").hide();
+  
+  // Go to error state
+goTo("error");
 }
 
 // Status notification functions
 
 export function bindStatusRepeaterOnce() {
-   if (_statusRepeaterBound) return true;
+   if (_statusRepeaterBound) {return true};
    
    try {
     // Get a reference to the repeater
-    const repeater = $w("#statusRepeater");
-    
+   
     // Check if the repeater exists
     if (!repeater) {
       console.error("Status repeater not found");
@@ -103,7 +104,7 @@ export function bindStatusRepeaterOnce() {
     }
     
     // Bind the item ready handler
-    repeater.onItemReady(($item, itemData) => {
+    repeater.onItemReady(($item, itemData, index) => {
       // message text
       $item("#statusText").text = itemData.message;
 
@@ -134,53 +135,53 @@ export function bindStatusRepeaterOnce() {
   }
 }
 
-export function bindImageProcessingRepeaterOnce() {
-   if (_imageProcessingRepeaterBound) return true;
+// export function bindImageProcessingRepeaterOnce() {
+//    if (_imageProcessingRepeaterBound) return true;
    
-   try {
-    // Get a reference to the image processing repeater
-    const repeater = $w("#imageProcessingRepeater");
+//    try {
+//     // Get a reference to the image processing repeater
+//     const repeater = $w("#imageProcessingRepeater");
     
-    // Check if the repeater exists
-    if (!repeater) {
-      console.error("Image processing repeater not found");
-      return false;
-    }
+//     // Check if the repeater exists
+//     if (!imgRepeater) {
+//       console.error("Image processing repeater not found");
+//       return false;
+//     }
     
-    // Bind the item ready handler
-    repeater.onItemReady(($item, itemData) => {
-      // Product name or identifier
-      $item("#imgProductName").text = itemData.productName || itemData.productId || "Unknown";
+//     // Bind the item ready handler
+//     imgRepeater.onItemReady(($item, itemData) => {
+//       // Product name or identifier
+//       $item("#imgProductName").text = itemData.productName || itemData.productId || "Unknown";
       
-      // Status text
-      $item("#imgStatus").text = itemData.status;
+//       // Status text
+//       $item("#imgStatus").text = itemData.status;
 
-      // icon: prefer explicit icon, else derive from status
-      const icon = itemData.icon || 
-        (itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "✅" :
-         itemData.status.toLowerCase().includes("processing") ? "🔄" :
-         itemData.status.toLowerCase().includes("pending") ? "⏳" :
-         itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "❌" : "");
-      $item("#imgIcon").text = icon;
+//       // icon: prefer explicit icon, else derive from status
+//       const icon = itemData.icon || 
+//         (itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "✅" :
+//          itemData.status.toLowerCase().includes("processing") ? "🔄" :
+//          itemData.status.toLowerCase().includes("pending") ? "⏳" :
+//          itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "❌" : "");
+//       $item("#imgIcon").text = icon;
 
-      // color by status
-      const color =
-        itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "#2E7D32" :
-        itemData.status.toLowerCase().includes("processing") ? "#2196F3" :
-        itemData.status.toLowerCase().includes("pending") ? "#FF8F00" :
-        itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "#C62828" : "#0F2B42";
-      $item("#imgStatus").style.color = color;
-    });
+//       // color by status
+//       const color =
+//         itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "#2E7D32" :
+//         itemData.status.toLowerCase().includes("processing") ? "#2196F3" :
+//         itemData.status.toLowerCase().includes("pending") ? "#FF8F00" :
+//         itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "#C62828" : "#0F2B42";
+//       $item("#imgStatus").style.color = color;
+//     });
 
-    _imageProcessingRepeaterBound = true;
-    console.log("Image processing repeater bound successfully");
-    return true;
-  } catch (err) {
-    console.error("Failed to bind image processing repeater:", err);
-    _imageProcessingRepeaterBound = false;
-    return false;
-  }
-}
+//     _imageProcessingRepeaterBound = true;
+//     console.log("Image processing repeater bound successfully");
+//     return true;
+//   } catch (err) {
+//     console.error("Failed to bind image processing repeater:", err);
+//     _imageProcessingRepeaterBound = false;
+//     return false;
+//   }
+// }
 
 export function clearStatusLog() {
   try {
@@ -287,7 +288,7 @@ export async function pushMessageImg(imageMessages, productId, productName, stat
       try {
         // Get repeater element
         const repeater = $w("#imageProcessingRepeater");
-        if (!repeater) {
+        if (!imgRepeater) {
           console.error("Image processing repeater not found during update");
           return;
         }
