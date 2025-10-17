@@ -1,12 +1,13 @@
 import wixData from 'wix-data';
-import {move, goTo, initializeNotices, pushMessage, pushMessageImg, updateStatus, pause} from 'public/stateManager.js'
+import {move, goTo, initializeNotices, pushMessage, pushMessageImg, updateStatus, pause} from 'public/stateManagement.js'
 import {postEntry, initializeLog } from 'public/logManagement.js'
 import {Entry, Log, MediaFile} from "public/classes.js"
-import {getUrl, normalizeCsv } from 'backend/dataConverter.web.js'
+import {getUrl, normalizeCsv } from 'backend/dataProcessor.web.js'
 import {getSchemaMap, parseCsv,  splitAndSaveData, reportMissingHeaders, uploadAccessCsv } from 'public/dataManagement.js'
-import {processAndSaveImages} from 'backend/imageConverter.web.js'
-import {manageImgResult, handleImgError, clearErrorReport, setupErrorReportUI, getErrorReport, manageFileResult, processCallableUrls, saveUploadedFiles, processManualUrls, processExternalImageUrls, processWixUrls, processRawImgs} from 'public/imageManagement.js'
-import {handleFinalReview} from  'public/transferManagement.js'
+// COMMENTED OUT - Later stage files not needed for current scope (CSV processing only)
+// import {processAndSaveImages} from 'backend/imageConverter.web.js'
+// import {manageImgResult, handleImgError, clearErrorReport, setupErrorReportUI, getErrorReport, manageFileResult, processCallableUrls, saveUploadedFiles, processManualUrls, processExternalImageUrls, processWixUrls, processRawImgs} from 'public/imageManagement.js'
+// import {handleFinalReview} from  'public/transferManagement.js'
 
 let messages = []
 let imageMessages = []
@@ -88,13 +89,13 @@ async function parseDataImages(result) {
     console.log("🔄 Image processing required for some URLs");
     if (splitResult.success) {
         parseData = splitResult.data;
-        if (parseData.requiresImageProcessing) {
-            pushMessage(messages, "info", "Initiating image processing", "🔄");
-           
-            goTo("PROCESSING");
-            const imageResult = await processExternalImageUrls();
-           
-        } 
+        // if (parseData.requiresImageProcessing) {
+        //     pushMessage(messages, "info", "Initiating image processing", "🔄");
+        //    
+        //     goTo("PROCESSING");
+        //     const imageResult = await processExternalImageUrls();
+        //    
+        // } 
     } else if (splitResult.requiresSmartSyncApp) {
         pushMessage(messages, "warning", "Wix Media files cannot be accessed remotely. They can only be accessed from your account. SmartSync app will make this process easier.", "⚠️");
         postEntry("Image processing requires SmartSync app. Please install it and try again.", "warning", loc, null); 
