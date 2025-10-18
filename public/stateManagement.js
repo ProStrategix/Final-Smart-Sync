@@ -31,6 +31,18 @@ let tstamp = (new Date()).toDateString()
 let repeater = $w("#statusRepeater");
 // let imgRepeater = $w("#imageProcessingRepeater");
 
+// UNUSED FUNCTION - move() is imported in app.js but never called
+// export function move(direction) {
+//    console.log('state index: ', sIndex)
+//    if(direction === "forward") {
+//        sIndex++
+//        if(sIndex >= states.length) {sIndex = states.length - 1}
+//    } else if(direction === "back") {
+//        sIndex--
+//        if(sIndex < 0) {sIndex = 0}
+//    }
+//    goTo(states[sIndex])
+// }
 
 export function logStateChange(oldState, newState) {
     const message = `State changed from ${oldState} to ${newState} at ${tstamp}`;
@@ -73,21 +85,22 @@ export function handleError(error, context = "") {
   // Go to error state
 goTo("error");
 }
-export function handleError(error, context = "") {
-  console.error(`Error ${context ? "in " + context : ""}:`, error);
-  
-  // Safely extract error properties
-  const errorCode = (error && error.errorCode) || "UNKNOWN";
-  const errorMessage = (error && (error.errorDescription || error.message)) || "Unknown error";
-  
-  // Update UI elements
-  $w("#statusText").text = `Error occurred${context ? " during " + context : ""}`;
-  $w("#errorMsg").text = `${errorMessage} (Code: ${errorCode})`;
-  $w("#spinnerBox").hide();
-  
-  // Go to error state
-goTo("error");
-}
+// DUPLICATE FUNCTION - This second handleError is identical to the first one above
+// export function handleError(error, context = "") {
+//   console.error(`Error ${context ? "in " + context : ""}:`, error);
+//   
+//   // Safely extract error properties
+//   const errorCode = (error && error.errorCode) || "UNKNOWN";
+//   const errorMessage = (error && (error.errorDescription || error.message)) || "Unknown error";
+//   
+//   // Update UI elements
+//   $w("#statusText").text = `Error occurred${context ? " during " + context : ""}`;
+//   $w("#errorMsg").text = `${errorMessage} (Code: ${errorCode})`;
+//   $w("#spinnerBox").hide();
+//   
+//   // Go to error state
+// goTo("error");
+// }
 
 // Status notification functions
 

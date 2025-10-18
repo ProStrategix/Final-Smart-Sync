@@ -91,49 +91,53 @@ constructor(message, level, source, stackTrace = null) {
                     });
             }
 
-    getErrorLogs() {
-        return this.entries.filter(entry => entry.level === 'error');
-    }
+    // UNUSED METHOD - getErrorLogs is never called
+    // getErrorLogs() {
+    //     return this.entries.filter(entry => entry.level === 'error');
+    // }
     
-    // Count errors by type
-    getErrorCount() {
-        return this.getErrorLogs().length;
-    }
+    // UNUSED METHOD - getErrorCount is never called
+    // // Count errors by type
+    // getErrorCount() {
+    //     return this.getErrorLogs().length;
+    // }
     
-    // Enhanced error logging with stack traces
-    logError(message, error, source) {
-        const stackTrace = error?.stack || 'No stack trace available';
-        const errorMessage = `${message}: ${error?.message || 'Unknown error'}`;
-        
-        const entry = new Entry(
-            new Date().toISOString(),
-            errorMessage,
-            'error',
-            source || 'unknown'
-        );
-        
-        // Add stack trace as additional property
-        entry.stackTrace = stackTrace;
-        
-        this.entries.push(entry);
-        return entry;
-    }
+    // UNUSED METHOD - logError is never called
+    // // Enhanced error logging with stack traces
+    // logError(message, error, source) {
+    //     const stackTrace = error?.stack || 'No stack trace available';
+    //     const errorMessage = `${message}: ${error?.message || 'Unknown error'}`;
+    //     
+    //     const entry = new Entry(
+    //         new Date().toISOString(),
+    //         errorMessage,
+    //         'error',
+    //         source || 'unknown'
+    //     );
+    //     
+    //     // Add stack trace as additional property
+    //     entry.stackTrace = stackTrace;
+    //     
+    //     this.entries.push(entry);
+    //     return entry;
+    // }
     
-    // Report critical errors to external service
-    reportCriticalError(entry) {
-        // Example implementation - replace with actual reporting logic
-        console.error('CRITICAL ERROR:', entry);
-        
-        // Could send to error tracking service
-        // errorTrackingService.report({
-        //     message: entry.message,
-        //     stack: entry.stackTrace,
-        //     timestamp: entry.date,
-        //     source: entry.source
-        // });
-        
-        return true;
-    }
+    // UNUSED METHOD - reportCriticalError is never called
+    // // Report critical errors to external service
+    // reportCriticalError(entry) {
+    //     // Example implementation - replace with actual reporting logic
+    //     console.error('CRITICAL ERROR:', entry);
+    //     
+    //     // Could send to error tracking service
+    //     // errorTrackingService.report({
+    //     //     message: entry.message,
+    //     //     stack: entry.stackTrace,
+    //     //     timestamp: entry.date,
+    //     //     source: entry.source
+    //     // });
+    //     
+    //     return true;
+    // }
 
     clearLog() {
         this.entries = [];
@@ -178,11 +182,13 @@ export class MediaFile {
         }
     }
 
-    isWixImg() {
-        return this.isImage() && (this.fileUrl.includes("wix:image://") || this.fileUrl.includes("wixstatic.com"));
-    }
+    // UNUSED METHOD - isWixImg is never called
+    // isWixImg() {
+    //     return this.isImage() && (this.fileUrl.includes("wix:image://") || this.fileUrl.includes("wixstatic.com"));
+    // }
 
-    isRegImg() {
-        return this.isImage() && !this.isWixImg();
-    }
+    // UNUSED METHOD - isRegImg is never called
+    // isRegImg() {
+    //     return this.isImage() && !this.isWixImg();
+    // }
 }

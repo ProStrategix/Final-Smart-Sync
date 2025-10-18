@@ -585,77 +585,79 @@ function buildCaseResult(caseType, analysis, processedRows, generatedIds) {
  * Analyzes and classifies image data into 6 categories
  * DOES NOT save to collections - only returns classification results
  */
-export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
-  try {
-    if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
-      throw new Error("Invalid or empty normalized data provided");
-    }
-
-    await postEntryBE("info", "Starting image data analysis and classification", {
-      rowCount: normalizedRows.length,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 1: Ensure all rows have valid IDs
-    const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
-    
-    if (generatedIds.length > 0) {
-      await postEntryBE("info", `Generated ${generatedIds.length} missing product IDs`, {
-        generatedIds: generatedIds,
-        location: "dataConverter.web.js"
-      });
-    }
-
-    // Step 2: Analyze and categorize image URLs
-    const VALID_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
-    const analysis = analyzeImageUrls(processedRows, VALID_IMAGE_EXTENSIONS);
-    
-    // Log invalid URL warnings
-    if (analysis.invalidWarnings.length > 0) {
-      await postEntryBE("warn", `Found ${analysis.invalidWarnings.length} invalid image URLs`, {
-        invalidUrls: analysis.invalidWarnings,
-        location: "dataConverter.web.js"
-      });
-    }
-
-    await postEntryBE("success", "Image URL analysis completed", {
-      callableUrls: analysis.callableUrls.length,
-      wixUrls: analysis.wixUrls.length,
-      localFiles: analysis.localFiles.length,
-      emptyOrInvalid: analysis.emptyOrInvalid.length,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 3: Determine case type
-    const caseType = determineCaseType(analysis, processedRows.length);
-    
-    await postEntryBE("info", `Image classification determined: ${caseType}`, {
-      caseType: caseType,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 4: Build and return result with instructions
-    const result = buildCaseResult(caseType, analysis, processedRows, generatedIds);
-    
-    await postEntryBE("success", "Image data analysis completed successfully", {
-      caseType: result.caseType,
-      nextAction: result.nextAction,
-      location: "dataConverter.web.js"
-    });
-
-    return result;
-
-  } catch (err) {
-    await postEntryBE("error", "Image data analysis failed", {
-      error: err.message,
-      location: "dataConverter.web.js"
-    });
-    return {
-      success: false,
-      error: err.message
-    };
-  }
-});
+// UNUSED FUNCTION - analyzeImageData is exported but never called
+// NOTE: Contains useful ensureValidIds logic that should be extracted and used in classification
+// export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
+//   try {
+//     if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
+//       throw new Error("Invalid or empty normalized data provided");
+//     }
+//
+//     await postEntryBE("info", "Starting image data analysis and classification", {
+//       rowCount: normalizedRows.length,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 1: Ensure all rows have valid IDs
+//     const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
+//     
+//     if (generatedIds.length > 0) {
+//       await postEntryBE("info", `Generated ${generatedIds.length} missing product IDs`, {
+//         generatedIds: generatedIds,
+//         location: "dataConverter.web.js"
+//       });
+//     }
+//
+//     // Step 2: Analyze and categorize image URLs
+//     const VALID_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+//     const analysis = analyzeImageUrls(processedRows, VALID_IMAGE_EXTENSIONS);
+//     
+//     // Log invalid URL warnings
+//     if (analysis.invalidWarnings.length > 0) {
+//       await postEntryBE("warn", `Found ${analysis.invalidWarnings.length} invalid image URLs`, {
+//         invalidUrls: analysis.invalidWarnings,
+//         location: "dataConverter.web.js"
+//       });
+//     }
+//
+//     await postEntryBE("success", "Image URL analysis completed", {
+//       callableUrls: analysis.callableUrls.length,
+//       wixUrls: analysis.wixUrls.length,
+//       localFiles: analysis.localFiles.length,
+//       emptyOrInvalid: analysis.emptyOrInvalid.length,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 3: Determine case type
+//     const caseType = determineCaseType(analysis, processedRows.length);
+//     
+//     await postEntryBE("info", `Image classification determined: ${caseType}`, {
+//       caseType: caseType,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 4: Build and return result with instructions
+//     const result = buildCaseResult(caseType, analysis, processedRows, generatedIds);
+//     
+//     await postEntryBE("success", "Image data analysis completed successfully", {
+//       caseType: result.caseType,
+//       nextAction: result.nextAction,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     return result;
+//
+//   } catch (err) {
+//     await postEntryBE("error", "Image data analysis failed", {
+//       error: err.message,
+//       location: "dataConverter.web.js"
+//     });
+//     return {
+//       success: false,
+//       error: err.message
+//     };
+//   }
+// });
 
 // ============================================================================
 // ORIGINAL FUNCTION: KEPT FOR BACKWARD COMPATIBILITY

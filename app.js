@@ -1,9 +1,9 @@
 import wixData from 'wix-data';
-import {move, goTo, initializeNotices, pushMessage, pushMessageImg, updateStatus, pause} from 'public/stateManagement.js'
+import {goTo, initializeNotices, pushMessage, pushMessageImg, updateStatus, pause} from 'public/stateManagement.js'
 import {postEntry, initializeLog } from 'public/logManagement.js'
 import {Entry, Log, MediaFile} from "public/classes.js"
 import {getUrl, normalizeCsv } from 'backend/dataProcessor.web.js'
-import {getSchemaMap, parseCsv,  splitAndSaveData, reportMissingHeaders, uploadAccessCsv, processCsv, splitDataImages } from 'public/dataManagement.js'
+import { uploadAccessCsv, processCsv, splitDataImages, splitNormalizedRowsIntoStructuredData } from 'public/dataManagement.js'
 //import {processAndSaveImages} from 'backend/imageConverter.web.js'
 //import {manageImgResult, handleImgError, clearErrorReport, setupErrorReportUI, getErrorReport, manageFileResult, processCallableUrls, saveUploadedFiles, processManualUrls, processExternalImageUrls, processWixUrls, processRawImgs} from 'public/imageManagement.js'
 //import {handleFinalReview} from  'public/transferManagement.js'
@@ -13,8 +13,8 @@ let imageMessages = []
 let mainLog 
 let entries = []
 const loc = "widget.js"
-let finalProducts = []
-let stat = 1
+// let finalProducts = []
+// let stat = 1
 
 $w.onReady(async function () {
 	if($widget.props.state === "" || $widget.props.state === null || $widget.props.state === undefined) {$widget.props.state = "INIT"}
@@ -75,9 +75,9 @@ $w('#uploadCsvButton').onChange((event) => {
             return normalized
         })
         .then(async (normalized) => {
-            ({parsedData, imageResults} = await splitDataImages(normalized))
-            displayOptions(imageResults)
-            storeParsedData(parsedData)
+            ({parsedData, imageResults} = await splitNormalizedRowsIntoStructuredData(normalized))
+            // displayOptions(imageResults)
+            // storeParsedData(parsedData)
             return {parsedData, imageResults}
         })
         

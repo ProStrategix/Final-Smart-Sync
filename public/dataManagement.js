@@ -389,26 +389,78 @@ export async function reportMissingHeaders(missingHeaders) {
   }
 }
 
-let tickerMessages = [];
+// let tickerMessages = [];
 
-export async function handleImageResults(result) {
-  if (result !== null) {
-    pushMessage(tickerMessages, "success", `✅ ${result.name} - Complete`, "✅");
-    $w("#uploadWixUrlsTicker").data = [...tickerMessages];
-  }
-}
+// UNUSED FUNCTION - handleImageResults is exported but never called
+// export async function handleImageResults(result) {
+//   if (result !== null) {
+//     pushMessage(tickerMessages, "success", `✅ ${result.name} - Complete`, "✅");
+//     $w("#uploadWixUrlsTicker").data = [...tickerMessages];
+//   }
+// }
 
-export async function handleWixImageUpload(imageData) {
-  if (imageData !== null) {
-    pushMessage(tickerMessages, "success", `✅ ${imageData.name} - Complete`, "✅");
-    $w("#uploadWixUrlsTicker").data = [...tickerMessages];
-  }
-}
+// UNUSED FUNCTION - handleWixImageUpload is exported but never called
+// export async function handleWixImageUpload(imageData) {
+//   if (imageData !== null) {
+//     pushMessage(tickerMessages, "success", `✅ ${imageData.name} - Complete`, "✅");
+//     $w("#uploadWixUrlsTicker").data = [...tickerMessages];
+//   }
+// }
 
 /**
  * Clears all existing Wix URLs from the WixImageURLs collection
  */
-async function clearWixUrlsCollection() {
+// UNUSED FUNCTION - clearWixUrlsCollection is defined but never called
+// async function clearWixUrlsCollection() {
+//   try {
+//     await postEntry(
+//       "Clearing existing Wix URLs from collection",
+//       "info",
+//       "dataManagement.js",
+//       null
+//     );
+//     
+//     // Query all items from WixImageURLs collection
+//     const results = await wixData.query("WixImageURLs")
+//       .limit(1000)
+//       .find();
+//     
+//     if (results.items.length > 0) {
+//       // Delete all items
+//       const deletePromises = results.items.map(item => 
+//         wixData.remove("WixImageURLs", item._id)
+//       );
+//       await Promise.all(deletePromises);
+//       
+//       await postEntry(
+//         `Cleared ${results.items.length} existing Wix URLs from collection`,
+//         "info",
+//         "dataManagement.js",
+//         null
+//       );
+//     } else {
+//       await postEntry(
+//         "No existing Wix URLs to clear",
+//         "info",
+//         "dataManagement.js",
+//         null
+//       );
+//     }
+//   } catch (err) {
+//     await postEntry(
+//       `Error clearing Wix URLs collection: ${err.message}`,
+//       "error",
+//       "dataManagement.js",
+//       err.stack
+//     );
+//     throw err;
+//   }
+// }
+
+/**
+ * Processes images with progress ticker display
+ */
+async function processImagesWithTicker(callableUrls) {
   try {
     await postEntry(
       "Clearing existing Wix URLs from collection",
@@ -575,6 +627,29 @@ async function processImagesWithTicker(callableUrls) {
   }
 }
 
+// UNUSED FUNCTION - splitDataImages is exported but never called in app.js
+// export async function splitDataImages(normalizedData) {
+//     let parsedData = [];
+//     let imageResults = {};  
+//     if (normalizedData.length > 0) {
+//         console.log("Splitting data and image URLs from normalized data");
+//         postEntry("Splitting data and image URLs from normalized data", "info", loc, null);
+//         pushMessage(tickerMessages, "info", "Splitting data and image URLs...", "ℹ️");
+//         const splitResult = await splitAndSaveData(normalizedData);
+//         parsedData = splitResult.parsedData || [];
+//         imageResults = splitResult.imageResults || {};
+//         console.log("Data and image URLs split complete");
+//         postEntry("Data and image URLs split complete", "info", loc, null);
+//         pushMessage(tickerMessages, "success", "Data and image URLs split complete", "✅");
+//     } else {
+//         console.warn("No normalized data provided for splitting");
+//         postEntry("No normalized data provided for splitting", "warning", loc, null);
+//         pushMessage(tickerMessages, "warning", "No normalized data to split", "⚠️");
+//         return goTo("ERRORMISSINGDATA");
+//     }
+//     return { parsedData, imageResults };
+// }
+
 export async function splitDataImages(normalizedData) {
     let parsedData = [];
     let imageResults = {};  
@@ -664,10 +739,14 @@ export async function splitNormalizedRowsIntoStructuredData(normalizedRows) {
     }
   }
 
+  const firstCategory = imgs[0]?.imageCategory;
+  const isAllOneCategory = imgs.every(img => img.imageCategory === firstCategory);
+
   return {
     data,
     imgs,
     imgTypes: Array.from(imgTypesSet),
-    errors
+    errors,
+    isAllOneCategory
   };
 }
