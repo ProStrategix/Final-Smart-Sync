@@ -100,8 +100,8 @@ export async function getSchemaMap() {
       .map(n => n.trim())
       .filter(Boolean);
 
-    // Check if this field is essential (marked as TRUE in Combos column)
-    const isEssential = item.combos === true || item.combos === "TRUE" || item.combos === "true";
+    // Check if this field is essential (marked as TRUE in isEssential column)
+    const isEssential = item.isEssential === true || item.isEssential === "TRUE" || item.isEssential === "true";
 
     schemaMap[main] = { 
       aliases, 
@@ -573,4 +573,101 @@ async function processImagesWithTicker(callableUrls) {
     );
     throw err;
   }
+}
+
+export async function splitDataImages(normalizedData) {
+    let parsedData = [];
+    let imageResults = {};  
+    if (normalizedData.length > 0) {
+        console.log("Splitting data and image URLs from normalized data");
+        postEntry("Splitting data and image URLs from normalized data", "info", loc, null);
+        pushMessage(tickerMessages, "info", "Splitting data and image URLs...", "ℹ️");
+        const splitResult = await splitAndSaveData(normalizedData);
+        parsedData = splitResult.parsedData || [];
+        imageResults = splitResult.imageResults || {};
+        console.log("Data and image URLs split complete");
+        postEntry("Data and image URLs split complete", "info", loc, null);
+        pushMessage(tickerMessages, "success", "Data and image URLs split complete", "✅");
+    } else {
+        console.warn("No normalized data provided for splitting");
+        postEntry("No normalized data provided for splitting", "warning", loc, null);
+        pushMessage(tickerMessages, "warning", "No normalized data to split", "⚠️");
+        return goTo("ERRORMISSINGDATA");
+    }
+    return { parsedData, imageResults };
+}
+
+import {
+  isCallable,
+  isWix,
+  isLocal,
+  isEmpty,
+  isNotCallable
+} from './classify';
+
+/**
+ * Processes normalized rows and classifies images into data, imgs, errors
+ */
+export async function splitNormalizedRowsIntoStructuredData(normalizedRows) {
+  const data = [];
+  const imgs = [];
+  const errors = [];
+  const imgTypesSet = new Set();
+
+  for (const row of normalizedRows) {
+    const {
+      rowId,
+      Headline,
+      Name,
+      Strain,
+      Category,
+      FormattedPrice,
+      unitPrice,
+      mainImg
+    } = row;
+
+    const now = new Date().toISOString();
+    const dataObj = {
+      _id: String(rowId),
+      'Created Date': now,
+      'Updated Date': now,
+      Owner: null,
+      rowId,
+      Headline,
+      Name,
+      Strain,
+      Category,
+      FormattedPrice,
+      unitPrice
+    };
+    data.push(dataObj);
+
+    let check = await isCallable(mainImg);
+    if (!check.ok) check = isWix(mainImg);
+    if (!check.ok) check = isLocal(mainImg);
+    if (!check.ok) check = isEmpty(mainImg);
+    if (!check.ok) check = isNotCallable(mainImg);
+
+    const imageObj = {
+      rowId,
+      Productname: Name,
+      Imageurl: mainImg,
+      imageCategory: check.class,
+      Status: check.reason
+    };
+
+    imgTypesSet.add(check.class);
+    if (check.class === 1 || check.class === 2) {
+      imgs.push(imageObj);
+    } else {
+      errors.push(imageObj);
+    }
+  }
+
+  return {
+    data,
+    imgs,
+    imgTypes: Array.from(imgTypesSet),
+    errors
+  };
 }

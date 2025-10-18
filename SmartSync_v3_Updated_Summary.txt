@@ -10,7 +10,7 @@ image processing → integrate data and images → review  and then finally tran
 essential field validation, and multiple image URL types (Wix URLs, callable 
 URLs, local files).
 
-================================================================================
+================================================================================+
 CURRENT V3 ARCHITECTURE
 ================================================================================
 

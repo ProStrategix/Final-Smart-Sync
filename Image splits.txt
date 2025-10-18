@@ -1,0 +1,41 @@
+I have validated the program up to the point of normalization.  I have an array of normalized rows. The task at hand is to  split these data into two arrays of objects where these objects will share at leasted a shared key.
+
+Data Obj : {
+	'_id:string',
+	'Created Date: auto gen',
+	'Updated Date: auto gen',
+	'Owner: auto gen','
+	rowId: critical shared key MUST ALWAYS BE HERE',
+	'Headline: Name Shown on Display',
+	'Name:productName is DB',
+	'Strain: one of three',
+	'Category:string',
+	'FormattedPrice:$XX.XX',
+	'unitPrice:number xx.xx'
+	}
+	
+	Image Obj : {
+		'Status:string',
+		'Productname: auto gen',
+		'Product Id: auto gen',
+		'Imageurl: auto gen',
+		'Rowid: critical shared key MUST ALWAYS BE HERE'
+		}				
+
+keys of Error Obj === keys of Image Obj  
+
+For each normalized row  => one data object row and one image object row.
+
+While we are splitting the data, we also want to categorize each of the main image url or file path.  These are the groups. Each will need to be tested - none shall be guessed.
+
+	1.	 Callable and Downloadable. - this url leads to a legit address where a file can be downloaded.
+	2. Wix URL - these are urls from a store from different site so you cannot pass them through. Use Regex for this
+	3. Local files - path is local storage path not a url.
+	4. No URL No Local => Error ->  create an error row
+	5. invalid url, not callable, not downloadable => Error
+
+Here there are 5 as every url must map to one of these categories.  When complete, we assign a label to whole array, it either all 1-5 or mixed (capture categories)
+
+We will start here. Complet this section. Validate and then move forward.
+
+
