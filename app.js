@@ -7,13 +7,15 @@ import { uploadAccessCsv, processCsv, splitNormalizedRowsIntoStructuredData, sto
 //import {processAndSaveImages} from 'backend/imageConverter.web.js'
 //import {manageImgResult, handleImgError, clearErrorReport, setupErrorReportUI, getErrorReport, manageFileResult, processCallableUrls, saveUploadedFiles, processManualUrls, processExternalImageUrls, processWixUrls, processRawImgs} from 'public/imageManagement.js'
 //import {handleFinalReview} from  'public/transferManagement.js'
-import {initiateConversion} from 'public/imageManagement.js'
+import {initiateConversion, handleMixed} from 'public/imageManagement.js'
 
 let messages = []
 let imageMessages = []
 let mainLog 
 let entries = []
 const loc = "app.js"
+let values = []
+let types = {}
 // let finalProducts = []
 // let stat = 1
 
@@ -81,7 +83,7 @@ $w('#uploadCsvButton').onChange((event) => {
                 throw new Error('Invalid normalized data received');
             }
             const {data, imgs, imgTypes, errors, isAllOneCategory} = await splitNormalizedRowsIntoStructuredData(normalData.normalizedRows, messages)
-            let types = {
+            types = {
                 isMixed: !isAllOneCategory,
                 values: imgTypes
             }
@@ -89,50 +91,65 @@ $w('#uploadCsvButton').onChange((event) => {
            .then((results) => {
                 if(results.every(res => res.status === 'fulfilled')) {
                     console.log("All data stored successfully.");
-                    // Pass the original arrays, not the database operation results
-                    let values = [data, imgs, errors];
+                    values = [data, imgs, errors];
+                    console.log('Showing results for ', values)
                     showResults(values, types)
                 } else {
-                    let html =  `<h6>Data Storage Errors:</h6><ul>`;
-                    results.forEach(res => {
-                        if(res.status === 'rejected') {
-                            html += `<li>${res.reason}</li>`;
-                            console.error('Data storage error:', res.reason);
-                        }
-                    });
-                    html += `</ul>`;
-                    $w('#errorText').html = html;
+                    let text =  `<h6>Data Storage Errors:</h6><ul>`;
+                        results[0].status === 'rejected' ? text += `<li>${results[0].reason}</li>` : ""    
+                        results[1].status === 'rejected' ? text += `<li>${results[1].reason}</li>` : ""     
+                        $w('#errorDetails').html = text
+                    }
                     console.error('Some data storage operations failed.');
                     postEntry('Some data storage operations failed.', 'error', loc, null);
                     pushMessage(messages, "error", "Some data storage operations failed. Check status for details.", "❌")
-                    goTo("ERROR");
+                    goTo("ERRORSYSTEM");
                 }
-           })
+           )
            .catch((storageError) => {
-                let html =  `<h6>Data Storage Failed:</h6><p>${"❌ " + storageError.message}</p>`;
-                $w('#errorText').html = html;
+                let text =  `<h6>Data Storage Failed:</h6><p>${"❌ " + storageError.message}</p>`;
+                $w('#errorMessage').html = html;
                 console.error('❌ Data storage failed:', storageError);
                postEntry(`Data storage failed: ${storageError.message}`, 'error', loc, storageError.stack);
                pushMessage(messages, "error", "Data storage failed during CSV processing. "+storageError.message, "❌")
-               goTo("ERROR");
+               goTo("ERRORSYSTEM");
            });
         })    
         .catch((uploadError) => {
             let html = `<h6>CSV Upload Failed:</h6><p>${"❌ " + uploadError.message}</p>`;
-            $w('#errorText').html = html;
+            $w('#errorMessage').html = html;
             postEntry(`CSV upload failed: ${uploadError.message}`, 'error', loc, uploadError.stack);
             pushMessage(messages, "error", "CSV upload failed. "+uploadError.message, "❌")
             console.error('❌ CSV upload failed:', uploadError);
-            goTo("ERROR");
+            goTo("ERRORSYSTEM");
         });
 });
 
 $w("#continueToImgConversion").onClick(() => {
     continueToImgConversion = !continueToImgConversion;
-    if(continueToImgConversion) {
-        $w("#continueToImgConversion").label = "✅ Initiate Image Conversion...";
-        initiateConversion();
-
+    if(continueToImgConversion && !types.isMixed) {
+        if(types.values.includes("3")) {
+          $w("#uploadFileSection").expand()
+        } else {
+            $w("#uploadFileSection").collapse()
+            $w("#continueToImgConversion").label = "✅ Initiating Image Conversion...";
+            initiateConversion(values);
+        }
+    } else {
+        return handleMixed(values, types)
     }
-
+    goTo("CONVERT")
 });
+
+
+$w('#toHome').onClick((event) => {
+    goTo("START")    
+})
+
+$w('#viewError').onClick((event) => {
+    goTo("ERRORIMAGES")    
+})
+
+$w('#howToFix').onClick((event) => {
+    goTo("PATCH")    
+})

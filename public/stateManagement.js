@@ -32,20 +32,7 @@ export const states = [  "START",
 let tstamp = (new Date()).toDateString()
 let repeater = $w("#statusRepeater");
 let classifyRepeater = $w("#classifyRepeater");
-// let imgRepeater = $w("#imageProcessingRepeater"); // COMMENTED OUT - Image management not yet rebuilt
-
-// UNUSED FUNCTION - move() is imported in app.js but never called
-// export function move(direction) {
-//    console.log('state index: ', sIndex)
-//    if(direction === "forward") {
-//        sIndex++
-//        if(sIndex >= states.length) {sIndex = states.length - 1}
-//    } else if(direction === "back") {
-//        sIndex--
-//        if(sIndex < 0) {sIndex = 0}
-//    }
-//    goTo(states[sIndex])
-// }
+let imgRepeater = $w("#imageProcessingRepeater"); // COMMENTED OUT - Image management not yet rebuilt
 
 export function logStateChange(oldState, newState) {
     const message = `State changed from ${oldState} to ${newState} at ${tstamp}`;
@@ -140,99 +127,53 @@ export function bindStatusRepeaterOnce() {
   }
 }
 
-export function bindClassificationRepeaterOnce() {
-   if (_classificationRepeaterBound) {return true};
-   
+export function bindImageProcessingRepeaterOnce() {
+   if (_imageProcessingRepeaterBound) {return true};
+    
    try {
-    // Get a reference to the classification repeater
+    // Get a reference to the image processing repeater
+    const repeater = $w("#imageProcessingRepeater");
     
     // Check if the repeater exists
-    if (!classifyRepeater) {
-      console.error("Classification repeater not found");
+    if (!imgRepeater) {
+      console.error("Image processing repeater not found");
       return false;
     }
     
     // Bind the item ready handler
-    classifyRepeater.onItemReady(($item, itemData, index) => {
-      // Classification message text
-      $item("#classMsg").text = itemData.message;
+    imgRepeater.onItemReady(($item, itemData) => {
+      // Product name or identifier
+      $item("#imgProductName").text = itemData.productName || itemData.productId || "Unknown";
+      
+      // Status text
+      $item("#imgStatus").text = itemData.status;
 
-      // icon: based on category
+      // icon: prefer explicit icon, else derive from status
       const icon = itemData.icon || 
-        (itemData.category === 1 ? "✅" :  // Callable
-         itemData.category === 2 ? "🔷" :  // Wix
-         itemData.category === 3 ? "📁" :  // Local
-         itemData.category === 4 ? "⚠️" :  // Empty
-         itemData.category === 5 ? "❌" : "❓"); // Not Callable
-      $item("#classIcon").text = icon;
+        (itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "✅" :
+         itemData.status.toLowerCase().includes("processing") ? "🔄" :
+         itemData.status.toLowerCase().includes("pending") ? "⏳" :
+         itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "❌" : "");
+      $item("#imgIcon").text = icon;
 
-      // color by category
+      // color by status
       const color =
-        itemData.category === 1 ? "#2E7D32" :  // Green for callable
-        itemData.category === 2 ? "#2196F3" :  // Blue for Wix
-        itemData.category === 3 ? "#FF8F00" :  // Orange for local
-        itemData.category === 4 ? "#FFC107" :  // Yellow for empty
-        itemData.category === 5 ? "#C62828" : "#0F2B42"; // Red for not callable
-      $item("#classMsg").style.color = color;
+        itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "#2E7D32" :
+        itemData.status.toLowerCase().includes("processing") ? "#2196F3" :
+        itemData.status.toLowerCase().includes("pending") ? "#FF8F00" :
+        itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "#C62828" : "#0F2B42";
+      $item("#imgStatus").style.color = color;
     });
 
-    _classificationRepeaterBound = true;
-    console.log("Classification repeater bound successfully");
+    _imageProcessingRepeaterBound = true;
+    console.log("Image processing repeater bound successfully");
     return true;
   } catch (err) {
-    console.error("Failed to bind classification repeater:", err);
-    _classificationRepeaterBound = false;
+    console.error("Failed to bind image processing repeater:", err);
+    _imageProcessingRepeaterBound = false;
     return false;
   }
 }
-
-// export function bindImageProcessingRepeaterOnce() {
-//    if (_imageProcessingRepeaterBound) return true;
-   
-//    try {
-//     // Get a reference to the image processing repeater
-//     const repeater = $w("#imageProcessingRepeater");
-    
-//     // Check if the repeater exists
-//     if (!imgRepeater) {
-//       console.error("Image processing repeater not found");
-//       return false;
-//     }
-    
-//     // Bind the item ready handler
-//     imgRepeater.onItemReady(($item, itemData) => {
-//       // Product name or identifier
-//       $item("#imgProductName").text = itemData.productName || itemData.productId || "Unknown";
-      
-//       // Status text
-//       $item("#imgStatus").text = itemData.status;
-
-//       // icon: prefer explicit icon, else derive from status
-//       const icon = itemData.icon || 
-//         (itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "✅" :
-//          itemData.status.toLowerCase().includes("processing") ? "🔄" :
-//          itemData.status.toLowerCase().includes("pending") ? "⏳" :
-//          itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "❌" : "");
-//       $item("#imgIcon").text = icon;
-
-//       // color by status
-//       const color =
-//         itemData.status.toLowerCase().includes("success") || itemData.status.toLowerCase().includes("complete") ? "#2E7D32" :
-//         itemData.status.toLowerCase().includes("processing") ? "#2196F3" :
-//         itemData.status.toLowerCase().includes("pending") ? "#FF8F00" :
-//         itemData.status.toLowerCase().includes("error") || itemData.status.toLowerCase().includes("failed") ? "#C62828" : "#0F2B42";
-//       $item("#imgStatus").style.color = color;
-//     });
-
-//     _imageProcessingRepeaterBound = true;
-//     console.log("Image processing repeater bound successfully");
-//     return true;
-//   } catch (err) {
-//     console.error("Failed to bind image processing repeater:", err);
-//     _imageProcessingRepeaterBound = false;
-//     return false;
-//   }
-// }
 
 export function clearStatusLog() {
   try {
@@ -333,48 +274,48 @@ export async function initializeStatusLog(messages) {
   }
 }
 
-// COMMENTED OUT - Image management not yet rebuilt
-// export async function pushMessageImg(imageMessages, productId, productName, status, icon) {
-//   try {
-//     // Create new image processing message item
-//     const item = { 
-//       _id: uuidv4(), 
-//       productId,
-//       productName,
-//       status,
-//       timestamp: new Date().toISOString()
-//     };
-//     if (icon) item.icon = icon;
-//     
-//     // Add to imageMessages array
-//     imageMessages.push(item);
-//     console.log(`Added image processing message: ${productName} - ${status}. Total: ${imageMessages.length}`);
-//     
-//     // Use direct DOM manipulation via setTimeout
-//     setTimeout(() => {
-//       try {
-//         // Get repeater element
-//         const repeater = $w("#imageProcessingRepeater");
-//         if (!imgRepeater) {
-//           console.error("Image processing repeater not found during update");
-//           return;
-//         }
-//         
-//         // Set the data directly
-//         repeater.data = [...imageMessages];
-//         
-//         console.log("Image processing repeater updated with:", imageMessages.map(m => `${m.productName}: ${m.status}`).join(", "));
-//       } catch (e) {
-//         console.error("Error updating image processing repeater:", e);
-//       }
-//     }, 10);
-//     
-//     return imageMessages;
-//   } catch (err) {
-//     console.error("Failed to push image processing message:", err);
-//     return imageMessages;
-//   }
-// }
+export async function pushMessageImg(imageMessages, productId, productName, status, icon) {
+  try {
+    // Create new image processing message item
+    const item = { 
+      _id: uuidv4(), 
+      productId,
+      productName,
+      status,
+      timestamp: new Date().toISOString()
+    };
+    if (icon) item.icon = icon;
+    
+    // Add to imageMessages array
+    imageMessages.push(item);
+    console.log(`Added image processing message: ${productName} - ${status}. Total: ${imageMessages.length}`);
+    
+    // Use direct DOM manipulation via setTimeout
+    setTimeout(() => {
+      try {
+        // Get repeater element
+        const imgRepeater = $w("#imageProcessingRepeater");
+        if (!imgRepeater) {
+          console.error("Image processing repeater not found during update");
+          return;
+        }
+        
+        // Set the data directly
+        imgRepeater.data = [...imageMessages];
+        
+        console.log("Image processing repeater updated with:", imageMessages.map(m => `${m.productName}: ${m.status}`).join(", "));
+      } catch (e) {
+        console.error("Error updating image processing repeater:", e);
+        pushMessageImg(imageMessages, productId, productName, status, icon);
+      }
+    }, 10);
+    
+    return imageMessages;
+  } catch (err) {
+    console.error("Failed to push image processing message:", err);
+    return imageMessages;
+  }
+}
 
 export async function initializeNotices(messages) {
   try {
