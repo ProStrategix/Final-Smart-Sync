@@ -10,8 +10,7 @@ import {isCallable,  isWix,  isLocal,  isEmpty,  isNotCallable} from 'public/cla
 //import { processAndSaveImages } from 'backend/imageConverter.web.js';
 
 const A = "@prostrategix/smartsync-product-transfer/ParsedData";
-const B = "@prostrategix/smartsync-product-transfer/PendingImageUrls";
-const C = "@prostrategix/smartsync-product-transfer/ParsedErrors";
+const B = "@prostrategix/smartsync-product-transfer/WixImageURLs";
 const loc = "dataManagement.js";
 let stat = 1
 
@@ -148,253 +147,253 @@ export async function parseCsv(csvText) {
   }
 }
 
-// export async function splitAndSaveData(normalizedRows) {
-//   try {
-//     console.log("🔄 splitAndSaveData called with", normalizedRows.length, "rows");
-//     await postEntry(
-//       `Starting data split and save process from frontend. Row count: ${normalizedRows.length}`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+export async function splitAndSaveData(normalizedRows) {
+  try {
+    console.log("🔄 splitAndSaveData called with", normalizedRows.length, "rows");
+    await postEntry(
+      `Starting data split and save process from frontend. Row count: ${normalizedRows.length}`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     const result = await splitAndSaveNormalizedData(normalizedRows);
-//     console.log("📊 Backend result:", result);
+    const result = await splitAndSaveNormalizedData(normalizedRows);
+    console.log("📊 Backend result:", result);
     
-//     // Case 1: Success - data saved successfully
-//     if (result.success && !result.requiresSmartSyncApp && !result.requiresImageProcessing && !result.missingImages) {
-//       await postEntry(
-//         `Data split and save completed successfully. Total processed: ${result.totalRowsProcessed}, Image records: ${result.imageRecordsSaved}, Parsed records: ${result.parsedRecordsSaved}`,
-//         "info",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 1: Success - data saved successfully
+    if (result.success && !result.requiresSmartSyncApp && !result.requiresImageProcessing && !result.missingImages) {
+      await postEntry(
+        `Data split and save completed successfully. Total processed: ${result.totalRowsProcessed}, Image records: ${result.imageRecordsSaved}, Parsed records: ${result.parsedRecordsSaved}`,
+        "info",
+        "dataManagement.js",
+        null
+      );
       
-//       return {
-//         success: true,
-//         message: `Successfully processed ${result.totalRowsProcessed} rows`,
-//         details: {
-//           imageRecordsSaved: result.imageRecordsSaved,
-//           parsedRecordsSaved: result.parsedRecordsSaved,
-//           generatedIds: result.generatedIds
-//         }
-//       };
-//     } 
+      return {
+        success: true,
+        message: `Successfully processed ${result.totalRowsProcessed} rows`,
+        details: {
+          imageRecordsSaved: result.imageRecordsSaved,
+          parsedRecordsSaved: result.parsedRecordsSaved,
+          generatedIds: result.generatedIds
+        }
+      };
+    } 
     
-//     // Case 2: Wix URLs detected - requires SmartSync app (routes to ERRORMISSINGIMAGES)
-//     else if (result.requiresSmartSyncApp && result.wixUrls && result.wixUrls.length > 0) {
-//       await postEntry(
-//         `Data split encountered Wix URLs: ${result.wixUrls.length} products with Wix media URLs`,
-//         "error",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 2: Wix URLs detected - requires SmartSync app (routes to ERRORMISSINGIMAGES)
+    else if (result.requiresSmartSyncApp && result.wixUrls && result.wixUrls.length > 0) {
+      await postEntry(
+        `Data split encountered Wix URLs: ${result.wixUrls.length} products with Wix media URLs`,
+        "error",
+        "dataManagement.js",
+        null
+      );
       
-//       goTo("ERRORMISSINGIMAGES");
+      goTo("ERRORMISSINGIMAGES");
       
-//       // Create formatted text list for better readability
-//       const productList = result.wixUrls
-//         .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
-//         .join("\n");
+      // Create formatted text list for better readability
+      const productList = result.wixUrls
+        .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
+        .join("\n");
       
-//       $w("#missingImagesMessage").text = `${result.message}
-//           Products with Wix URLs (${result.wixUrls.length}):
-//             ${productList}
-//           To continue, please download and install the SmartSync Wix Image Converter app:
-//             ${result.appInstallUrl}`;
+      $w("#missingImagesMessage").text = `${result.message}
+          Products with Wix URLs (${result.wixUrls.length}):
+            ${productList}
+          To continue, please download and install the SmartSync Wix Image Converter app:
+            ${result.appInstallUrl}`;
       
-//       return {
-//         success: false,
-//         requiresSmartSyncApp: true,
-//         wixUrls: result.wixUrls,
-//         message: result.message
-//       };
-//     }
+      return {
+        success: false,
+        requiresSmartSyncApp: true,
+        wixUrls: result.wixUrls,
+        message: result.message
+      };
+    }
     
-//     // Case 3: Callable URLs detected - ready for image processing
-//     else if (result.requiresImageProcessing && result.callableUrls && result.callableUrls.length > 0) {
-//       await postEntry(
-//         `Callable image URLs detected and saved: ${result.callableUrls.length} products ready for processing`,
-//         "info",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 3: Callable URLs detected - ready for image processing
+    else if (result.requiresImageProcessing && result.callableUrls && result.callableUrls.length > 0) {
+      await postEntry(
+        `Callable image URLs detected and saved: ${result.callableUrls.length} products ready for processing`,
+        "info",
+        "dataManagement.js",
+        null
+      );
       
-//       // NOTE: Backend already clears and populates PendingImageUrls before returning
-//       // No need to clear here - would be redundant and risky
+      // NOTE: Backend already clears and populates PendingImageUrls before returning
+      // No need to clear here - would be redundant and risky
       
-//       // COMMENTED OUT - processImagesWithTicker function is not active
-//       // Process images with ticker
-//       // const imageResults = await processImagesWithTicker(result.callableUrls);
+      // COMMENTED OUT - processImagesWithTicker function is not active
+      // Process images with ticker
+      // const imageResults = await processImagesWithTicker(result.callableUrls);
       
-//       return {
-//         success: true,
-//         requiresImageProcessing: true,
-//         callableUrls: result.callableUrls,
-//         // imageResults: imageResults,
-//         message: `Callable URLs ready for processing: ${result.callableUrls.length} images`,
-//         nextAction: result.nextAction
-//       };
-//     }
+      return {
+        success: true,
+        requiresImageProcessing: true,
+        callableUrls: result.callableUrls,
+        // imageResults: imageResults,
+        message: `Callable URLs ready for processing: ${result.callableUrls.length} images`,
+        nextAction: result.nextAction
+      };
+    }
     
-//     // Case 4: Missing images - all products have empty/invalid image URLs
-//     else if (result.missingImages === true && result.emptyImageProducts && result.emptyImageProducts.length > 0) {
-//       console.log("🚨 MISSING IMAGES CASE DETECTED");
-//       console.log("Missing images count:", result.emptyImageProducts.length);
-//       console.log("Empty image products:", result.emptyImageProducts);
+    // Case 4: Missing images - all products have empty/invalid image URLs
+    else if (result.missingImages === true && result.emptyImageProducts && result.emptyImageProducts.length > 0) {
+      console.log("🚨 MISSING IMAGES CASE DETECTED");
+      console.log("Missing images count:", result.emptyImageProducts.length);
+      console.log("Empty image products:", result.emptyImageProducts);
       
-//       await postEntry(
-//         `Missing images detected: ${result.emptyImageProducts.length} products without image URLs`,
-//         "warning",
-//         "dataManagement.js",
-//         null
-//       );
+      await postEntry(
+        `Missing images detected: ${result.emptyImageProducts.length} products without image URLs`,
+        "warning",
+        "dataManagement.js",
+        null
+      );
       
-//       goTo("ERRORMISSINGIMAGES");
+      goTo("ERRORMISSINGIMAGES");
       
-//       // Create formatted text list for better readability
-//       const productList = result.emptyImageProducts
-//         .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
-//         .join("\n");
+      // Create formatted text list for better readability
+      const productList = result.emptyImageProducts
+        .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
+        .join("\n");
       
-//       $w("#missingImagesMessage").text = `${result.message}
+      $w("#missingImagesMessage").text = `${result.message}
 
-// Products missing images (${result.emptyImageProducts.length}):
+Products missing images (${result.emptyImageProducts.length}):
 
-// ${productList}
+${productList}
 
-// Please add image URLs to your CSV or upload images manually.`;
+Please add image URLs to your CSV or upload images manually.`;
       
-//       return {
-//         success: false,
-//         missingImages: true,
-//         emptyImageProducts: result.emptyImageProducts,
-//         message: result.message
-//       };
-//     }
+      return {
+        success: false,
+        missingImages: true,
+        emptyImageProducts: result.emptyImageProducts,
+        message: result.message
+      };
+    }
     
-//     // Case 5: General error
-//     else {
-//       await postEntry(
-//         `Data split and save failed: ${result.error || 'Unknown error'}`,
-//         "error",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 5: General error
+    else {
+      await postEntry(
+        `Data split and save failed: ${result.error || 'Unknown error'}`,
+        "error",
+        "dataManagement.js",
+        null
+      );
       
-//       return {
-//         success: false,
-//         error: result.error || 'Unknown error occurred during data processing'
-//       };
-//     }
+      return {
+        success: false,
+        error: result.error || 'Unknown error occurred during data processing'
+      };
+    }
 
-//   } catch (err) {
-//     console.error("❌ ERROR in splitAndSaveData:", err);
-//     await postEntry(
-//       `Frontend data split function failed: ${err.message}`,
-//       "error",
-//       "dataManagement.js",
-//       err.stack
-//     );
+  } catch (err) {
+    console.error("❌ ERROR in splitAndSaveData:", err);
+    await postEntry(
+      `Frontend data split function failed: ${err.message}`,
+      "error",
+      "dataManagement.js",
+      err.stack
+    );
     
-//     return {
-//       success: false,
-//       error: err.message
-//     };
-//   }
-// }
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}
 
-// export async function reportMissingHeaders(missingHeaders) {
-//   try {
-//     // Convert missing headers to lowercase for matching
-//     const normalizedMissing = missingHeaders.map(h => h.toLowerCase().trim());
+export async function reportMissingHeaders(missingHeaders) {
+  try {
+    // Convert missing headers to lowercase for matching
+    const normalizedMissing = missingHeaders.map(h => h.toLowerCase().trim());
     
-//     await postEntry(
-//       `Querying MissingEssential collection for headers: ${normalizedMissing.join(", ")}`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Querying MissingEssential collection for headers: ${normalizedMissing.join(", ")}`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // Query all records from MissingEssential collection
-//     let allGuidance = await wixData.query('@prostrategix/smartsync-product-transfer/MissingEssential')
-//       .limit(1000)
-//       .find();
+    // Query all records from MissingEssential collection
+    let allGuidance = await wixData.query('@prostrategix/smartsync-product-transfer/MissingEssential')
+      .limit(1000)
+      .find();
 
-//     await postEntry(
-//       `MissingEssential collection returned ${allGuidance.items.length} total records`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `MissingEssential collection returned ${allGuidance.items.length} total records`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // Filter records where Header field (lowercase, trimmed) matches any missing header
-//     const matchedGuidance = allGuidance.items.filter(item => {
-//       const headerValue = (item.header || '').toLowerCase().trim();
-//       return normalizedMissing.includes(headerValue);
-//     });
+    // Filter records where Header field (lowercase, trimmed) matches any missing header
+    const matchedGuidance = allGuidance.items.filter(item => {
+      const headerValue = (item.header || '').toLowerCase().trim();
+      return normalizedMissing.includes(headerValue);
+    });
 
-//     await postEntry(
-//       `Found ${matchedGuidance.length} matching guidance records`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Found ${matchedGuidance.length} matching guidance records`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // If no matches found, create default entries
-//     if (matchedGuidance.length === 0) {
-//       await postEntry(
-//         `No guidance found in MissingEssential collection. Creating default entries.`,
-//         "warning",
-//         "dataManagement.js",
-//         null
-//       );
+    // If no matches found, create default entries
+    if (matchedGuidance.length === 0) {
+      await postEntry(
+        `No guidance found in MissingEssential collection. Creating default entries.`,
+        "warning",
+        "dataManagement.js",
+        null
+      );
       
-//       matchedGuidance.push(...missingHeaders.map(header => ({
-//         header: header,
-//         description: `The '${header}' field is required but was not found in your CSV`,
-//         solution: `Add a column named '${header}' to your CSV file with appropriate values`
+      matchedGuidance.push(...missingHeaders.map(header => ({
+        header: header,
+        description: `The '${header}' field is required but was not found in your CSV`,
+        solution: `Add a column named '${header}' to your CSV file with appropriate values`
       
-//       })));
-//     }
+      })));
+    }
 
-//     //$w('#missingHeadersBox').expand();
+    //$w('#missingHeadersBox').expand();
     
-//     // FIX: Bind onItemReady BEFORE setting data
-//     $w("#missingHeadersRepeater").onItemReady( ($item, itemData, index) => {
-//       $item("#index").text = (index + 1).toString();
-//       $item("#header").text = itemData.field;
-//       $item("#description").text = itemData.description;
-//       $item("#solution").text = itemData.solution;
-//     });
+    // FIX: Bind onItemReady BEFORE setting data
+    $w("#missingHeadersRepeater").onItemReady( ($item, itemData, index) => {
+      $item("#index").text = (index + 1).toString();
+      $item("#header").text = itemData.field;
+      $item("#description").text = itemData.description;
+      $item("#solution").text = itemData.solution;
+    });
     
-//     $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
-//       _id: uuidv4(),
-//       field: item.header,
-//       description: item.description,
-//       solution: item.solution
-//     }));
+    $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
+      _id: uuidv4(),
+      field: item.header,
+      description: item.description,
+      solution: item.solution
+    }));
     
-//     await postEntry(
-//       `Missing essential headers: ${missingHeaders.join(", ")}`,
-//       "error",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Missing essential headers: ${missingHeaders.join(", ")}`,
+      "error",
+      "dataManagement.js",
+      null
+    );
     
-//     //$w("#returnButton").show();
-//     return goTo("ERRORMISSINGHEADERS");
+    //$w("#returnButton").show();
+    return goTo("ERRORMISSINGHEADERS");
     
-//   } catch (err) {
-//     await postEntry(
-//       `Error in reportMissingHeaders: ${err.message}`,
-//       "error",
-//       "dataManagement.js",
-//       err.stack
-//     );
-//     throw err;
-//   }
-// }
+  } catch (err) {
+    await postEntry(
+      `Error in reportMissingHeaders: ${err.message}`,
+      "error",
+      "dataManagement.js",
+      err.stack
+    );
+    throw err;
+  }
+}
 
 // let tickerMessages = [];
 
@@ -794,15 +793,13 @@ export async function showResults(values, types) {
   if (!values || !Array.isArray(values)) {
     console.error("showResults: Invalid input - values must be an array");
     postEntry("showResults: Invalid input - values parameter is not an array", "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid input parameters detected. Please try again.</p>";
-    return goTo("ERRORSYSTEM");
+    return goTo("ERROR");
   }
   
   if (values.length !== 3) {
     console.error("showResults: Invalid input - values array must contain exactly 3 elements [data, imgs, errors]");
     postEntry(`showResults: Invalid input - values array has ${values.length} elements, expected 3`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid data structure detected. Please try again.</p>";
-    return goTo("ERRORSYSTEM");
+    return goTo("ERROR");
   }
   
   // Extract data arrays with clear variable names
@@ -814,22 +811,19 @@ export async function showResults(values, types) {
   if (!Array.isArray(A)) {
     console.error("showResults: Invalid data structure - A (data) is not an array:", typeof A);
     postEntry(`showResults: Invalid data structure - A (data) is ${typeof A}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid data format detected. Please check your data and try again.</p>";
-    return goTo("ERRORSYSTEM");
+    return goTo("ERROR");
   }
   
   if (!Array.isArray(B)) {
     console.error("showResults: Invalid data structure - B (imgs) is not an array:", typeof B);
     postEntry(`showResults: Invalid data structure - B (imgs) is ${typeof B}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid image data format detected. Please check your image data and try again.</p>";
-    return goTo("ERRORSYSTEM");
+    return goTo("ERROR");
   }
   
   if (!Array.isArray(C)) {
     console.error("showResults: Invalid data structure - C (errors) is not an array:", typeof C);
     postEntry(`showResults: Invalid data structure - C (errors) is ${typeof C}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid error data format detected. Please check your data and try again.</p>";
-    return goTo("ERRORSYSTEM");
+    return goTo("ERROR");
   }
   
   console.log(`Input validation passed: A=${A.length}, B=${B.length}, C=${C.length}`);
@@ -880,9 +874,7 @@ export async function showResults(values, types) {
   
   // Fallback case
   console.log("Unexpected condition reached in showResults");
-  html = "<h5>System Error</h5><p>An unexpected condition was reached in the results processing. Please try again or contact support if the issue persists.</p>";
-  $w('#errorDetails').html = html;
-  return goTo("ERRORSYSTEM");
+  return goTo("ERROR");
 }
 
 export async function reportErrors(errors) {

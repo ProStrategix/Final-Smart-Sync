@@ -4,7 +4,8 @@
  */
 
 // Trusted domains for callable check
-const trustedDomains = ['images.unsplash.com', 'cdn.shopify.com'];
+// TODO: REMOVE 'example.com' before production - added temporarily for testing
+const trustedDomains = ['images.unsplash.com', 'cdn.shopify.com', 'example.com'];
 
 // Valid image file extensions
 const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];

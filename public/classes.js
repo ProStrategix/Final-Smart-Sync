@@ -192,3 +192,23 @@ export class MediaFile {
     //     return this.isImage() && !this.isWixImg();
     // }
 }
+
+export class Message {
+    constructor(text, type) {
+        this.id = uuidv4();
+        this.text = text;
+        this.type = ['info', 'success', 'warning', 'error'].includes(type) ? type : 'info';
+        this.icon = this.getIcon(type);
+        this.timestamp = (new Date()).toISOString();
+    }
+
+    getIcon(type) {
+        switch (type) {
+            case 'success': return '✅';
+            case 'info': return 'ℹ️';
+            case 'warning': return '⚠️';
+            case 'error': return '❌';
+            default: return 'ℹ️';
+        }   
+    }
+}

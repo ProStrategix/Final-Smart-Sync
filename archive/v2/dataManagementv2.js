@@ -4,14 +4,9 @@ import { postEntry } from 'public/logManagement.js';
 import { goTo, pushMessage, pause } from 'public/stateManagement.js';
 import { v4 as uuidv4 } from 'uuid';
 import { splitAndSaveNormalizedData, normalizeCsv, getUrl } from 'backend/dataProcessor.web.js';
-import { Message } from 'public/classes.js';
-import {isCallable,  isWix,  isLocal,  isEmpty,  isNotCallable} from 'public/classify';
-
-//import { processAndSaveImages } from 'backend/imageConverter.web.js';
 
 const A = "@prostrategix/smartsync-product-transfer/ParsedData";
-const B = "@prostrategix/smartsync-product-transfer/PendingImageUrls";
-const C = "@prostrategix/smartsync-product-transfer/ParsedErrors";
+const B = "@prostrategix/smartsync-product-transfer/WixImageURLs";
 const loc = "dataManagement.js";
 let stat = 1
 
@@ -50,6 +45,16 @@ export async function uploadAccessCsv(file, messages) {
 export async function processCsv(csvText, messages) {
    const rawParse = await parseCsv(csvText)
     let parsed = JSON.parse(rawParse)
+    
+    // Add rowId to each row BEFORE normalization
+    if (parsed.rows && Array.isArray(parsed.rows)) {
+        parsed.rows.forEach(row => {
+            if (!row.rowId) {
+                row.rowId = uuidv4();
+            }
+        });
+    }
+    
     let schemaMap = await getSchemaMap()
     console.log('data heading to normalization: ' , parsed, ' vs map: ', schemaMap)
     postEntry("Csv data has been parsed and schema map created", 'success',"dataManagement.js", null)
@@ -73,7 +78,7 @@ export async function processCsv(csvText, messages) {
         if (messages) pushMessage(messages, "success", "CSV data has been normalized.", "✅")
         postEntry("Data have been normalized", 'success',"dataConverter.web.js", null)
         await pause (1000)
-        
+        goTo("DATAREPORT")
         return {data: normalize, success: true}
     } else {
         console.error("No normalized rows found after normalization.");
@@ -148,253 +153,253 @@ export async function parseCsv(csvText) {
   }
 }
 
-// export async function splitAndSaveData(normalizedRows) {
-//   try {
-//     console.log("🔄 splitAndSaveData called with", normalizedRows.length, "rows");
-//     await postEntry(
-//       `Starting data split and save process from frontend. Row count: ${normalizedRows.length}`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+export async function splitAndSaveData(normalizedRows) {
+  try {
+    console.log("🔄 splitAndSaveData called with", normalizedRows.length, "rows");
+    await postEntry(
+      `Starting data split and save process from frontend. Row count: ${normalizedRows.length}`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     const result = await splitAndSaveNormalizedData(normalizedRows);
-//     console.log("📊 Backend result:", result);
+    const result = await splitAndSaveNormalizedData(normalizedRows);
+    console.log("📊 Backend result:", result);
     
-//     // Case 1: Success - data saved successfully
-//     if (result.success && !result.requiresSmartSyncApp && !result.requiresImageProcessing && !result.missingImages) {
-//       await postEntry(
-//         `Data split and save completed successfully. Total processed: ${result.totalRowsProcessed}, Image records: ${result.imageRecordsSaved}, Parsed records: ${result.parsedRecordsSaved}`,
-//         "info",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 1: Success - data saved successfully
+    if (result.success && !result.requiresSmartSyncApp && !result.requiresImageProcessing && !result.missingImages) {
+      await postEntry(
+        `Data split and save completed successfully. Total processed: ${result.totalRowsProcessed}, Image records: ${result.imageRecordsSaved}, Parsed records: ${result.parsedRecordsSaved}`,
+        "info",
+        "dataManagement.js",
+        null
+      );
       
-//       return {
-//         success: true,
-//         message: `Successfully processed ${result.totalRowsProcessed} rows`,
-//         details: {
-//           imageRecordsSaved: result.imageRecordsSaved,
-//           parsedRecordsSaved: result.parsedRecordsSaved,
-//           generatedIds: result.generatedIds
-//         }
-//       };
-//     } 
+      return {
+        success: true,
+        message: `Successfully processed ${result.totalRowsProcessed} rows`,
+        details: {
+          imageRecordsSaved: result.imageRecordsSaved,
+          parsedRecordsSaved: result.parsedRecordsSaved,
+          generatedIds: result.generatedIds
+        }
+      };
+    } 
     
-//     // Case 2: Wix URLs detected - requires SmartSync app (routes to ERRORMISSINGIMAGES)
-//     else if (result.requiresSmartSyncApp && result.wixUrls && result.wixUrls.length > 0) {
-//       await postEntry(
-//         `Data split encountered Wix URLs: ${result.wixUrls.length} products with Wix media URLs`,
-//         "error",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 2: Wix URLs detected - requires SmartSync app (routes to ERRORMISSINGIMAGES)
+    else if (result.requiresSmartSyncApp && result.wixUrls && result.wixUrls.length > 0) {
+      await postEntry(
+        `Data split encountered Wix URLs: ${result.wixUrls.length} products with Wix media URLs`,
+        "error",
+        "dataManagement.js",
+        null
+      );
       
-//       goTo("ERRORMISSINGIMAGES");
+      goTo("ERRORMISSINGIMAGES");
       
-//       // Create formatted text list for better readability
-//       const productList = result.wixUrls
-//         .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
-//         .join("\n");
+      // Create formatted text list for better readability
+      const productList = result.wixUrls
+        .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
+        .join("\n");
       
-//       $w("#missingImagesMessage").text = `${result.message}
-//           Products with Wix URLs (${result.wixUrls.length}):
-//             ${productList}
-//           To continue, please download and install the SmartSync Wix Image Converter app:
-//             ${result.appInstallUrl}`;
+      $w("#missingImagesMessage").text = `${result.message}
+          Products with Wix URLs (${result.wixUrls.length}):
+            ${productList}
+          To continue, please download and install the SmartSync Wix Image Converter app:
+            ${result.appInstallUrl}`;
       
-//       return {
-//         success: false,
-//         requiresSmartSyncApp: true,
-//         wixUrls: result.wixUrls,
-//         message: result.message
-//       };
-//     }
+      return {
+        success: false,
+        requiresSmartSyncApp: true,
+        wixUrls: result.wixUrls,
+        message: result.message
+      };
+    }
     
-//     // Case 3: Callable URLs detected - ready for image processing
-//     else if (result.requiresImageProcessing && result.callableUrls && result.callableUrls.length > 0) {
-//       await postEntry(
-//         `Callable image URLs detected and saved: ${result.callableUrls.length} products ready for processing`,
-//         "info",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 3: Callable URLs detected - ready for image processing
+    else if (result.requiresImageProcessing && result.callableUrls && result.callableUrls.length > 0) {
+      await postEntry(
+        `Callable image URLs detected and saved: ${result.callableUrls.length} products ready for processing`,
+        "info",
+        "dataManagement.js",
+        null
+      );
       
-//       // NOTE: Backend already clears and populates PendingImageUrls before returning
-//       // No need to clear here - would be redundant and risky
+      // NOTE: Backend already clears and populates PendingImageUrls before returning
+      // No need to clear here - would be redundant and risky
       
-//       // COMMENTED OUT - processImagesWithTicker function is not active
-//       // Process images with ticker
-//       // const imageResults = await processImagesWithTicker(result.callableUrls);
+      // COMMENTED OUT - processImagesWithTicker function is not active
+      // Process images with ticker
+      // const imageResults = await processImagesWithTicker(result.callableUrls);
       
-//       return {
-//         success: true,
-//         requiresImageProcessing: true,
-//         callableUrls: result.callableUrls,
-//         // imageResults: imageResults,
-//         message: `Callable URLs ready for processing: ${result.callableUrls.length} images`,
-//         nextAction: result.nextAction
-//       };
-//     }
+      return {
+        success: true,
+        requiresImageProcessing: true,
+        callableUrls: result.callableUrls,
+        // imageResults: imageResults,
+        message: `Callable URLs ready for processing: ${result.callableUrls.length} images`,
+        nextAction: result.nextAction
+      };
+    }
     
-//     // Case 4: Missing images - all products have empty/invalid image URLs
-//     else if (result.missingImages === true && result.emptyImageProducts && result.emptyImageProducts.length > 0) {
-//       console.log("🚨 MISSING IMAGES CASE DETECTED");
-//       console.log("Missing images count:", result.emptyImageProducts.length);
-//       console.log("Empty image products:", result.emptyImageProducts);
+    // Case 4: Missing images - all products have empty/invalid image URLs
+    else if (result.missingImages === true && result.emptyImageProducts && result.emptyImageProducts.length > 0) {
+      console.log("🚨 MISSING IMAGES CASE DETECTED");
+      console.log("Missing images count:", result.emptyImageProducts.length);
+      console.log("Empty image products:", result.emptyImageProducts);
       
-//       await postEntry(
-//         `Missing images detected: ${result.emptyImageProducts.length} products without image URLs`,
-//         "warning",
-//         "dataManagement.js",
-//         null
-//       );
+      await postEntry(
+        `Missing images detected: ${result.emptyImageProducts.length} products without image URLs`,
+        "warning",
+        "dataManagement.js",
+        null
+      );
       
-//       goTo("ERRORMISSINGIMAGES");
+      goTo("ERRORMISSINGIMAGES");
       
-//       // Create formatted text list for better readability
-//       const productList = result.emptyImageProducts
-//         .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
-//         .join("\n");
+      // Create formatted text list for better readability
+      const productList = result.emptyImageProducts
+        .map((p, index) => `${index + 1}. ${p.productName} (ID: ${p.productId})`)
+        .join("\n");
       
-//       $w("#missingImagesMessage").text = `${result.message}
+      $w("#missingImagesMessage").text = `${result.message}
 
-// Products missing images (${result.emptyImageProducts.length}):
+Products missing images (${result.emptyImageProducts.length}):
 
-// ${productList}
+${productList}
 
-// Please add image URLs to your CSV or upload images manually.`;
+Please add image URLs to your CSV or upload images manually.`;
       
-//       return {
-//         success: false,
-//         missingImages: true,
-//         emptyImageProducts: result.emptyImageProducts,
-//         message: result.message
-//       };
-//     }
+      return {
+        success: false,
+        missingImages: true,
+        emptyImageProducts: result.emptyImageProducts,
+        message: result.message
+      };
+    }
     
-//     // Case 5: General error
-//     else {
-//       await postEntry(
-//         `Data split and save failed: ${result.error || 'Unknown error'}`,
-//         "error",
-//         "dataManagement.js",
-//         null
-//       );
+    // Case 5: General error
+    else {
+      await postEntry(
+        `Data split and save failed: ${result.error || 'Unknown error'}`,
+        "error",
+        "dataManagement.js",
+        null
+      );
       
-//       return {
-//         success: false,
-//         error: result.error || 'Unknown error occurred during data processing'
-//       };
-//     }
+      return {
+        success: false,
+        error: result.error || 'Unknown error occurred during data processing'
+      };
+    }
 
-//   } catch (err) {
-//     console.error("❌ ERROR in splitAndSaveData:", err);
-//     await postEntry(
-//       `Frontend data split function failed: ${err.message}`,
-//       "error",
-//       "dataManagement.js",
-//       err.stack
-//     );
+  } catch (err) {
+    console.error("❌ ERROR in splitAndSaveData:", err);
+    await postEntry(
+      `Frontend data split function failed: ${err.message}`,
+      "error",
+      "dataManagement.js",
+      err.stack
+    );
     
-//     return {
-//       success: false,
-//       error: err.message
-//     };
-//   }
-// }
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}
 
-// export async function reportMissingHeaders(missingHeaders) {
-//   try {
-//     // Convert missing headers to lowercase for matching
-//     const normalizedMissing = missingHeaders.map(h => h.toLowerCase().trim());
+export async function reportMissingHeaders(missingHeaders) {
+  try {
+    // Convert missing headers to lowercase for matching
+    const normalizedMissing = missingHeaders.map(h => h.toLowerCase().trim());
     
-//     await postEntry(
-//       `Querying MissingEssential collection for headers: ${normalizedMissing.join(", ")}`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Querying MissingEssential collection for headers: ${normalizedMissing.join(", ")}`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // Query all records from MissingEssential collection
-//     let allGuidance = await wixData.query('@prostrategix/smartsync-product-transfer/MissingEssential')
-//       .limit(1000)
-//       .find();
+    // Query all records from MissingEssential collection
+    let allGuidance = await wixData.query('@prostrategix/smartsync-product-transfer/MissingEssential')
+      .limit(1000)
+      .find();
 
-//     await postEntry(
-//       `MissingEssential collection returned ${allGuidance.items.length} total records`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `MissingEssential collection returned ${allGuidance.items.length} total records`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // Filter records where Header field (lowercase, trimmed) matches any missing header
-//     const matchedGuidance = allGuidance.items.filter(item => {
-//       const headerValue = (item.header || '').toLowerCase().trim();
-//       return normalizedMissing.includes(headerValue);
-//     });
+    // Filter records where Header field (lowercase, trimmed) matches any missing header
+    const matchedGuidance = allGuidance.items.filter(item => {
+      const headerValue = (item.header || '').toLowerCase().trim();
+      return normalizedMissing.includes(headerValue);
+    });
 
-//     await postEntry(
-//       `Found ${matchedGuidance.length} matching guidance records`,
-//       "info",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Found ${matchedGuidance.length} matching guidance records`,
+      "info",
+      "dataManagement.js",
+      null
+    );
 
-//     // If no matches found, create default entries
-//     if (matchedGuidance.length === 0) {
-//       await postEntry(
-//         `No guidance found in MissingEssential collection. Creating default entries.`,
-//         "warning",
-//         "dataManagement.js",
-//         null
-//       );
+    // If no matches found, create default entries
+    if (matchedGuidance.length === 0) {
+      await postEntry(
+        `No guidance found in MissingEssential collection. Creating default entries.`,
+        "warning",
+        "dataManagement.js",
+        null
+      );
       
-//       matchedGuidance.push(...missingHeaders.map(header => ({
-//         header: header,
-//         description: `The '${header}' field is required but was not found in your CSV`,
-//         solution: `Add a column named '${header}' to your CSV file with appropriate values`
+      matchedGuidance.push(...missingHeaders.map(header => ({
+        header: header,
+        description: `The '${header}' field is required but was not found in your CSV`,
+        solution: `Add a column named '${header}' to your CSV file with appropriate values`
       
-//       })));
-//     }
+      })));
+    }
 
-//     //$w('#missingHeadersBox').expand();
+    //$w('#missingHeadersBox').expand();
     
-//     // FIX: Bind onItemReady BEFORE setting data
-//     $w("#missingHeadersRepeater").onItemReady( ($item, itemData, index) => {
-//       $item("#index").text = (index + 1).toString();
-//       $item("#header").text = itemData.field;
-//       $item("#description").text = itemData.description;
-//       $item("#solution").text = itemData.solution;
-//     });
+    // FIX: Bind onItemReady BEFORE setting data
+    $w("#missingHeadersRepeater").onItemReady( ($item, itemData, index) => {
+      $item("#index").text = (index + 1).toString();
+      $item("#header").text = itemData.field;
+      $item("#description").text = itemData.description;
+      $item("#solution").text = itemData.solution;
+    });
     
-//     $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
-//       _id: uuidv4(),
-//       field: item.header,
-//       description: item.description,
-//       solution: item.solution
-//     }));
+    $w('#missingHeadersRepeater').data = matchedGuidance.map(item => ({
+      _id: uuidv4(),
+      field: item.header,
+      description: item.description,
+      solution: item.solution
+    }));
     
-//     await postEntry(
-//       `Missing essential headers: ${missingHeaders.join(", ")}`,
-//       "error",
-//       "dataManagement.js",
-//       null
-//     );
+    await postEntry(
+      `Missing essential headers: ${missingHeaders.join(", ")}`,
+      "error",
+      "dataManagement.js",
+      null
+    );
     
-//     //$w("#returnButton").show();
-//     return goTo("ERRORMISSINGHEADERS");
+    //$w("#returnButton").show();
+    return goTo("ERRORMISSINGHEADERS");
     
-//   } catch (err) {
-//     await postEntry(
-//       `Error in reportMissingHeaders: ${err.message}`,
-//       "error",
-//       "dataManagement.js",
-//       err.stack
-//     );
-//     throw err;
-//   }
-// }
+  } catch (err) {
+    await postEntry(
+      `Error in reportMissingHeaders: ${err.message}`,
+      "error",
+      "dataManagement.js",
+      err.stack
+    );
+    throw err;
+  }
+}
 
 // let tickerMessages = [];
 
@@ -645,7 +650,7 @@ export async function parseCsv(csvText) {
 //     if (normalizedData.length > 0) {
 //         console.log("Splitting data and image URLs from normalized data");
 //         postEntry("Splitting data and image URLs from normalized data", "info", loc, null);
-//         pushMessage(messages, "info", "Splitting data and image URLs...", "");
+//         pushMessage(messages, "info", "Splitting data and image URLs...", "ℹ️");
 //         const splitResult = await splitAndSaveData(normalizedData);
 //         parsedData = splitResult.parsedData || [];
 //         imageResults = splitResult.imageResults || {};
@@ -661,40 +666,28 @@ export async function parseCsv(csvText) {
 //     return { parsedData, imageResults };
 // }
 
-
+import {
+  isCallable,
+  isWix,
+  isLocal,
+  isEmpty,
+  isNotCallable
+} from '../../public/classify';
 
 /**
  * Processes normalized rows and classifies images into data, imgs, errors
  */
-
 export async function splitNormalizedRowsIntoStructuredData(normalizedRows, messages) {
   const data = [];
   const imgs = [];
   const errors = [];
   const imgTypesSet = new Set();
-  
 
-  console.log("splitNormalizedRowsIntoStructuredData called with", normalizedRows?.length, "rows");
-
-  if (!Array.isArray(normalizedRows)) {
-    return {
-      'data': [],
-      'imgs': [],
-      'imgTypes': [],
-      'errors': [],
-      'isAllOneCategory': true
-    };
-  }
-
-  if (Array.isArray(normalizedRows)) {
-    // Add initial message
-    messages.push(new Message("Starting image classification...", "info"));
-    
-    for (const row of normalizedRows) {
-      // Ensure rowId exists, generate if missing
-      if (!row.rowId) {
-        row.rowId = uuidv4();
-      }
+  for (const row of normalizedRows) {
+    // Ensure rowId exists, generate if missing
+    if (!row.rowId) {
+      row.rowId = uuidv4();
+    }
     
     const {
       rowId,
@@ -745,148 +738,18 @@ export async function splitNormalizedRowsIntoStructuredData(normalizedRows, mess
     }
     console.log(`Processed row ${rowId}: ${check.class} - ${check.reason}`);
     await postEntry(`Processed row ${rowId}: ${check.class} - ${check.reason}`, "info", "dataManagement.js", null);
-   await pause (2);
-   await pushMessage(messages, "info", `Processed row ${rowId}: ${check.class} - ${check.reason}`, "ℹ️");
+    pushMessage(messages, "info", `Row ${rowId}: Image classification result:
+    ${name} was placed in ${check.class} - given ${check.reason}`, "ℹ️");
   }
 
   const firstCategory = imgs[0]?.imageCategory;
   const isAllOneCategory = imgs.every(img => img.imageCategory === firstCategory);
   pushMessage(messages, "info", `All images classified in the same category: ${isAllOneCategory}`, "ℹ️");
   return {
-    'data': data,
-    'imgs': imgs,
-    'imgTypes': Array.from(imgTypesSet),
-    'errors': errors,
-    'isAllOneCategory': isAllOneCategory
+    data,
+    imgs,
+    imgTypes: Array.from(imgTypesSet),
+    errors,
+    isAllOneCategory
   };
-  }
 }
-
-export async function store(data, dbName) {
-  try {
-    const results = await wixData.query(dbName).find();
-    const ids = results.items.map(item => item._id);
-    
-    if (ids.length > 0) {
-      const cleared = await wixData.bulkRemove(dbName, ids);
-      console.log(`Cleared ${ids.length} existing entries from ${dbName}`);
-      postEntry(`Cleared ${ids.length} existing entries from ${dbName}`, 'info', 'dataManagement.js', null);
-    } else {
-      console.log(`No existing entries to clear from ${dbName}`);
-      postEntry(`No existing entries to clear from ${dbName}`, 'info', 'dataManagement.js', null);
-    }
-    
-    const saved = await wixData.bulkInsert(dbName, data);
-    return saved;
-  } catch (error) {
-    console.error(`Error in store function for ${dbName}:`, error);
-    postEntry(`Error in store function for ${dbName}: ${error.message}`, 'error', 'dataManagement.js', error.stack);
-    throw error;
-  }
-}
-
-export async function showResults(values, types) {
-  console.log("..................................Showing results.........................................");
-  console.log('Results:', values);
-  console.log('Types:', types);
-  
-  // Input validation - ensure values is an array with expected structure
-  if (!values || !Array.isArray(values)) {
-    console.error("showResults: Invalid input - values must be an array");
-    postEntry("showResults: Invalid input - values parameter is not an array", "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid input parameters detected. Please try again.</p>";
-    return goTo("ERRORSYSTEM");
-  }
-  
-  if (values.length !== 3) {
-    console.error("showResults: Invalid input - values array must contain exactly 3 elements [data, imgs, errors]");
-    postEntry(`showResults: Invalid input - values array has ${values.length} elements, expected 3`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid data structure detected. Please try again.</p>";
-    return goTo("ERRORSYSTEM");
-  }
-  
-  // Extract data arrays with clear variable names
-  const A = values[0]; // data
-  const B = values[1]; // imgs
-  const C = values[2]; // errors
-  
-  // Validate that each element is an array
-  if (!Array.isArray(A)) {
-    console.error("showResults: Invalid data structure - A (data) is not an array:", typeof A);
-    postEntry(`showResults: Invalid data structure - A (data) is ${typeof A}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid data format detected. Please check your data and try again.</p>";
-    return goTo("ERRORSYSTEM");
-  }
-  
-  if (!Array.isArray(B)) {
-    console.error("showResults: Invalid data structure - B (imgs) is not an array:", typeof B);
-    postEntry(`showResults: Invalid data structure - B (imgs) is ${typeof B}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid image data format detected. Please check your image data and try again.</p>";
-    return goTo("ERRORSYSTEM");
-  }
-  
-  if (!Array.isArray(C)) {
-    console.error("showResults: Invalid data structure - C (errors) is not an array:", typeof C);
-    postEntry(`showResults: Invalid data structure - C (errors) is ${typeof C}, expected array`, "error", "dataManagement.js", null);
-    $w("#errorDetails").html = "<h5>System Error</h5><p>Invalid error data format detected. Please check your data and try again.</p>";
-    return goTo("ERRORSYSTEM");
-  }
-  
-  console.log(`Input validation passed: A=${A.length}, B=${B.length}, C=${C.length}`);
-  postEntry(`showResults input validation: data=${A.length}, imgs=${B.length}, errors=${C.length}`, "info", "dataManagement.js", null);
-  
-  let html = "";
-  
-  // Logic: if !A or A.length === 0 (Critical abort)
-  if (!A || A.length === 0) {
-    html = "<h5>Incident Notice</h5><p>Data file was corrupted. All product data was somehow lost. An incident report has been generated and logged. Unfortunately, you will need to try again.</p>";
-    console.log("Critical abort - no data:", html);
-    $w('#errorDetails').html = html;
-    return goTo("ERRORSYSTEM");
-  }
-  
-  // Logic: if !B or B.length === 0 => ERRORIMAGES
-  if (!B || B.length === 0) {
-    html = "<h5>Incident Notice</h5><p>No images found or could be classified. Dubious URLs detected or missing file paths. The application will not function properly without valid image paths. Please add the url or filepath to where your image is stored.</p>";
-    $w('#errorMessage').html = html;
-    $w("#howToFix").hide();
-    console.log("No images found:", html);
-    return goTo("ERRORIMAGES");
-  }
-  
-  // Logic: C === B, when !0 ===> ERRORIMAGES
-  if (C && B && C.length === B.length && B.length > 0) {
-    html = "<h5>Critical Error</h5><p>All images were missing or could not be accessed. This is a critical issue that needs to be addressed immediately. Please review and ensure your links or file paths are correct before re-uploading.</p>";
-    $w('#errorMessage').html = html;
-    $w("#howToFix").hide();
-    console.log("All images have errors:", html);
-    return goTo("ERRORIMAGES");
-  }
-  
-  // Logic: A&B>0 && C === 0 ===> Report
-  if (A.length > 0 && B.length > 0 && (!C || C.length === 0)) {
-    $w("#viewError").hide();
-    console.log("Success - no errors, proceeding to report");
-    return goTo("DATAREPORT");
-  }
-  
-  // Logic: if A > 0 && B > 0 && C < A ==> Report
-  if (A.length > 0 && B.length > 0 && C && C.length > 0 && C.length < A.length) {
-    $w("#viewError").show();
-    $w("#howToFix").show();
-    console.log("Some errors found, but proceeding to report");
-    return goTo("DATAREPORT");
-  }
-  
-  // Fallback case
-  console.log("Unexpected condition reached in showResults");
-  html = "<h5>System Error</h5><p>An unexpected condition was reached in the results processing. Please try again or contact support if the issue persists.</p>";
-  $w('#errorDetails').html = html;
-  return goTo("ERRORSYSTEM");
-}
-
-export async function reportErrors(errors) {
-  console.log("Reporting errors...");
-  console.log( 'Errors:', errors);
-  return;
-} 

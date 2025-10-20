@@ -1,0 +1,11 @@
+Product-ID,Product_Name,Main-Image,product_category,unit-price,Strain-Info,Product Headline
+PROD_001,Blue Dream,https://example.com/blue-dream.jpg,Flower,25.99,Hybrid,Premium Blue Dream
+PROD-002,OG Kush,https://example.com/og-kush.jpg,Flower,$29.99 ,Indica,Classic OG Kush
+PROD_003,Sour Diesel,https://example.com/sour-diesel.jpg,Flower,27.99,Sativa,Energizing Sour Diesel
+PROD004,Green Crack,https://example.com/green-crack.jpg,Flower,24.99,Sativa,Uplifting Green Crack
+PROD_005,Purple Haze,https://example.com/purple-haze.jpg,Flower,$32.99 ,Indica,Legendary Purple Haze
+PROD_006,White Widow,https://example.com/white-widow.jpg,Flower,$28.99 ,Hybrid,Classic White Widow
+PROD_007,Granddaddy Purple,https://example.com/gdp.jpg,Flower,30.99,Indica,Relaxing GDP
+PROD_008,Jack Herer,https://example.com/jack-herer.jpg,Flower,$26.99 ,Sativa,Energetic Jack Herer
+PROD_009,Gelato,https://example.com/gelato.jpg,Flower,33.99,Hybrid,Sweet Gelato
+PROD_010,Strawberry Cough,https://example.com/strawberry-cough.jpg,Flower,$31.99 ,Sativa,Fruity Strawberry Cough

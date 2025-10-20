@@ -37,17 +37,8 @@ function normalizeString(str = "", flags = []) {
 
 export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, schemaMap) => {
   try {
-    // Input validation
     if (!Array.isArray(headers) || !Array.isArray(rows) || typeof schemaMap !== 'object') {
       throw new Error("Invalid inputs passed to normalizeCsv");
-    }
-    
-    if (headers.length === 0) {
-      throw new Error("No headers provided");
-    }
-    
-    if (Object.keys(schemaMap).length === 0) {
-      throw new Error("Empty schema map provided");
     }
 
     await postEntryBE("info", "CSV normalization started", {
@@ -75,15 +66,13 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
     const fixedHeaders = {}; // Track header fixes
 
     // First pass - direct matches
-    if (Array.isArray(headers)) {
-      for (const header of headers) {
-        const normHeader = normalizeString(header);
-        const matchedMain = aliasToMainMap[normHeader];
-        if (matchedMain && !usedCsvHeaders.has(header)) {
-          headerMap[matchedMain] = header;
-          mappedHeaders[matchedMain] = header;
-          usedCsvHeaders.add(header);
-        }
+    for (const header of headers) {
+      const normHeader = normalizeString(header);
+      const matchedMain = aliasToMainMap[normHeader];
+      if (matchedMain && !usedCsvHeaders.has(header)) {
+        headerMap[matchedMain] = header;
+        mappedHeaders[matchedMain] = header;
+        usedCsvHeaders.add(header);
       }
     }
 
@@ -92,32 +81,28 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
       .filter(([_, config]) => config.essential)
       .map(([mainKey]) => mainKey);
 
-    if (Array.isArray(essentialFields)) {
-      for (const essentialField of essentialFields) {
-        if (!mappedHeaders[essentialField]) {
-          // Try to find a match by checking if any unmapped header could work
-          if (Array.isArray(headers)) {
-            for (const header of headers) {
-              if (usedCsvHeaders.has(header)) continue;
-              
-              const normHeader = normalizeString(header);
-              const { aliases } = schemaMap[essentialField];
-              
-              // Check if this header could be an alias for this essential field
-              const couldMatch = aliases.some(alias => {
-                const normAlias = normalizeString(alias);
-                return normHeader.includes(normAlias) || normAlias.includes(normHeader) ||
-                       normHeader === normalizeString(essentialField);
-              });
-              
-              if (couldMatch) {
-                headerMap[essentialField] = header;
-                mappedHeaders[essentialField] = header;
-                usedCsvHeaders.add(header);
-                fixedHeaders[header] = essentialField;
-                break;
-              }
-            }
+    for (const essentialField of essentialFields) {
+      if (!mappedHeaders[essentialField]) {
+        // Try to find a match by checking if any unmapped header could work
+        for (const header of headers) {
+          if (usedCsvHeaders.has(header)) continue;
+          
+          const normHeader = normalizeString(header);
+          const { aliases } = schemaMap[essentialField];
+          
+          // Check if this header could be an alias for this essential field
+          const couldMatch = aliases.some(alias => {
+            const normAlias = normalizeString(alias);
+            return normHeader.includes(normAlias) || normAlias.includes(normHeader) ||
+                   normHeader === normalizeString(essentialField);
+          });
+          
+          if (couldMatch) {
+            headerMap[essentialField] = header;
+            mappedHeaders[essentialField] = header;
+            usedCsvHeaders.add(header);
+            fixedHeaders[header] = essentialField;
+            break;
           }
         }
       }
@@ -151,11 +136,13 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
     const normalizedRows = [];
     const invalidRows = [];
 
-    if (Array.isArray(rows)) {
-      for (const [index, row] of rows.entries()) {
-        const normRow = {};
-        let hasAllEssentials = true;
-        const missingEssentials = [];
+    for (const [index, row] of rows.entries()) {
+      const normRow = {};
+      let hasAllEssentials = true;
+      const missingEssentials = [];
+
+      // Add unique rowId to each row FIRST - before any validation
+      normRow.rowId = uuidv4();
 
       // Map all fields
       for (const [mainKey, csvHeader] of Object.entries(headerMap)) {
@@ -194,9 +181,6 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
         }
       }
 
-      // Add unique rowId to each row BEFORE validation
-      normRow.rowId = uuidv4();
-
       // Check essential fields (excluding mainImg since we handle missing images separately)
       essentialFields.forEach(essentialField => {
         // Skip mainImg validation - it's handled in splitAndSaveNormalizedData
@@ -219,7 +203,6 @@ export const normalizeCsv = webMethod(Permissions.Anyone, async (headers, rows, 
           missingEssentials
         });
       }
-    }
     }
 
     await postEntryBE("success", "Row validation completed", {
@@ -276,20 +259,9 @@ function ensureValidIds(normalizedRows) {
   const processedRows = [];
   const generatedIds = [];
   
-  if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
-    return { processedRows: [], generatedIds: [] };
-  }
-  
-  // Memory optimization: process in chunks for large datasets
-  const CHUNK_SIZE = 1000;
-  const totalRows = normalizedRows.length;
-  
-  for (let startIndex = 0; startIndex < totalRows; startIndex += CHUNK_SIZE) {
-    const endIndex = Math.min(startIndex + CHUNK_SIZE, totalRows);
-    
-    for (let index = startIndex; index < endIndex; index++) {
-      const row = normalizedRows[index];
-      let processedRow = { ...row };
+  for (let index = 0; index < normalizedRows.length; index++) {
+    const row = normalizedRows[index];
+    let processedRow = { ...row };
     
     // Ensure rowId exists (should already be set in normalizeCsv, but double-check)
     if (!processedRow.rowId) {
@@ -303,8 +275,7 @@ function ensureValidIds(normalizedRows) {
       generatedIds.push(processedRow.ID);
     }
     
-      processedRows.push(processedRow);
-    }
+    processedRows.push(processedRow);
   }
   
   return { processedRows, generatedIds };
@@ -403,11 +374,10 @@ function analyzeImageUrls(processedRows, validExtensions) {
   };
   const invalidWarnings = [];
   
-  if (Array.isArray(processedRows)) {
-    for (let index = 0; index < processedRows.length; index++) {
-      const row = processedRows[index];
-      
-      if (row.mainImg && row.mainImg.trim() !== '') {
+  for (let index = 0; index < processedRows.length; index++) {
+    const row = processedRows[index];
+    
+    if (row.mainImg && row.mainImg.trim() !== '') {
       const imageUrl = row.mainImg.trim();
       
       // Check if it's a Wix media URL
@@ -471,7 +441,6 @@ function analyzeImageUrls(processedRows, validExtensions) {
         rowIndex: index
       });
     }
-  }
   }
   
   return { ...analysis, invalidWarnings };
@@ -616,77 +585,79 @@ function buildCaseResult(caseType, analysis, processedRows, generatedIds) {
  * Analyzes and classifies image data into 6 categories
  * DOES NOT save to collections - only returns classification results
  */
-export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
-  try {
-    if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
-      throw new Error("Invalid or empty normalized data provided");
-    }
-
-    await postEntryBE("info", "Starting image data analysis and classification", {
-      rowCount: normalizedRows.length,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 1: Ensure all rows have valid IDs
-    const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
-    
-    if (generatedIds.length > 0) {
-      await postEntryBE("info", `Generated ${generatedIds.length} missing product IDs`, {
-        generatedIds: generatedIds,
-        location: "dataConverter.web.js"
-      });
-    }
-
-    // Step 2: Analyze and categorize image URLs
-    const VALID_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
-    const analysis = analyzeImageUrls(processedRows, VALID_IMAGE_EXTENSIONS);
-    
-    // Log invalid URL warnings
-    if (analysis.invalidWarnings.length > 0) {
-      await postEntryBE("warn", `Found ${analysis.invalidWarnings.length} invalid image URLs`, {
-        invalidUrls: analysis.invalidWarnings,
-        location: "dataConverter.web.js"
-      });
-    }
-
-    await postEntryBE("success", "Image URL analysis completed", {
-      callableUrls: analysis.callableUrls.length,
-      wixUrls: analysis.wixUrls.length,
-      localFiles: analysis.localFiles.length,
-      emptyOrInvalid: analysis.emptyOrInvalid.length,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 3: Determine case type
-    const caseType = determineCaseType(analysis, processedRows.length);
-    
-    await postEntryBE("info", `Image classification determined: ${caseType}`, {
-      caseType: caseType,
-      location: "dataConverter.web.js"
-    });
-
-    // Step 4: Build and return result with instructions
-    const result = buildCaseResult(caseType, analysis, processedRows, generatedIds);
-    
-    await postEntryBE("success", "Image data analysis completed successfully", {
-      caseType: result.caseType,
-      nextAction: result.nextAction,
-      location: "dataConverter.web.js"
-    });
-
-    return result;
-
-  } catch (err) {
-    await postEntryBE("error", "Image data analysis failed", {
-      error: err.message,
-      location: "dataConverter.web.js"
-    });
-    return {
-      success: false,
-      error: err.message
-    };
-  }
-});
+// UNUSED FUNCTION - analyzeImageData is exported but never called
+// NOTE: Contains useful ensureValidIds logic that should be extracted and used in classification
+// export const analyzeImageData = webMethod(Permissions.Anyone, async (normalizedRows) => {
+//   try {
+//     if (!Array.isArray(normalizedRows) || normalizedRows.length === 0) {
+//       throw new Error("Invalid or empty normalized data provided");
+//     }
+//
+//     await postEntryBE("info", "Starting image data analysis and classification", {
+//       rowCount: normalizedRows.length,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 1: Ensure all rows have valid IDs
+//     const { processedRows, generatedIds } = ensureValidIds(normalizedRows);
+//     
+//     if (generatedIds.length > 0) {
+//       await postEntryBE("info", `Generated ${generatedIds.length} missing product IDs`, {
+//         generatedIds: generatedIds,
+//         location: "dataConverter.web.js"
+//       });
+//     }
+//
+//     // Step 2: Analyze and categorize image URLs
+//     const VALID_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+//     const analysis = analyzeImageUrls(processedRows, VALID_IMAGE_EXTENSIONS);
+//     
+//     // Log invalid URL warnings
+//     if (analysis.invalidWarnings.length > 0) {
+//       await postEntryBE("warn", `Found ${analysis.invalidWarnings.length} invalid image URLs`, {
+//         invalidUrls: analysis.invalidWarnings,
+//         location: "dataConverter.web.js"
+//       });
+//     }
+//
+//     await postEntryBE("success", "Image URL analysis completed", {
+//       callableUrls: analysis.callableUrls.length,
+//       wixUrls: analysis.wixUrls.length,
+//       localFiles: analysis.localFiles.length,
+//       emptyOrInvalid: analysis.emptyOrInvalid.length,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 3: Determine case type
+//     const caseType = determineCaseType(analysis, processedRows.length);
+//     
+//     await postEntryBE("info", `Image classification determined: ${caseType}`, {
+//       caseType: caseType,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     // Step 4: Build and return result with instructions
+//     const result = buildCaseResult(caseType, analysis, processedRows, generatedIds);
+//     
+//     await postEntryBE("success", "Image data analysis completed successfully", {
+//       caseType: result.caseType,
+//       nextAction: result.nextAction,
+//       location: "dataConverter.web.js"
+//     });
+//
+//     return result;
+//
+//   } catch (err) {
+//     await postEntryBE("error", "Image data analysis failed", {
+//       error: err.message,
+//       location: "dataConverter.web.js"
+//     });
+//     return {
+//       success: false,
+//       error: err.message
+//     };
+//   }
+// });
 
 // ============================================================================
 // ORIGINAL FUNCTION: KEPT FOR BACKWARD COMPATIBILITY
@@ -743,11 +714,10 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
     };
     const invalidUrlWarnings = [];
 
-    if (Array.isArray(processedRows)) {
-      for (let index = 0; index < processedRows.length; index++) {
-        const row = processedRows[index];
-        
-        if (row.mainImg && row.mainImg.trim() !== '') {
+    for (let index = 0; index < processedRows.length; index++) {
+      const row = processedRows[index];
+      
+      if (row.mainImg && row.mainImg.trim() !== '') {
         const imageUrl = row.mainImg.trim();
         
         // Check if it's a Wix media URL
@@ -853,7 +823,6 @@ export const splitAndSaveNormalizedData = webMethod(Permissions.Anyone, async (n
           rowIndex: index
         });
       }
-    }
     }
     
     // Log all invalid URL warnings at once
