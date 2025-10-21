@@ -6,8 +6,11 @@
 import { postEntry } from 'public/logManagement.js';
 import { goTo, pushMessageImg } from 'public/stateManagement.js';
 import {session} from 'wix-storage';
+import { uploadBlobs } from 'backend/imageProcessor.web.js';
+import wixData from 'wix-data';
 
 const loc = "imageManagement.js";
+const PRODUCT_LISTINGS_DB = "@prostrategix/smartsync-product-transfer/ParsedData";
 let imgMessages = [];
 let imgFiles = [];
 let failedFiles = [];
@@ -28,7 +31,12 @@ export async function handleMixed(values, types) {}
 
 export async function covertImgToWixUrls(values) {
     let results = await initiateConversion(values);
-    let wixUrls = 
+    
+    if (results.success && results.wixURLs) {
+        return results.wixURLs;
+    }
+    
+    return [];
 }
 
 
@@ -115,7 +123,142 @@ export async function initiateConversion(values) {
             totalFailed: failedFiles.length
         };
 
-        return upd
+        // Upload blobs to Wix Media Manager
+        if (imgFiles.length > 0) {
+            pushMessageImg(imgMessages, "info", `Uploading ${imgFiles.length} images to Wix Media Manager...`, "🔄");
+            postEntry(`Starting upload of ${imgFiles.length} images to Wix Media Manager`, "info", loc, null);
+            
+            try {
+                const uploadResult = await uploadBlobs(imgFiles);
+                
+                if (!uploadResult.success) {
+                    pushMessageImg(imgMessages, "error", `Upload failed: ${uploadResult.error}`, "❌");
+                    postEntry(`Upload failed: ${uploadResult.error}`, "error", loc, null);
+                    return {
+                        success: false,
+                        error: uploadResult.error
+                    };
+                }
+                
+                console.log("✅ Upload completed. Results:", uploadResult.results);
+                pushMessageImg(imgMessages, "success", `Successfully uploaded ${uploadResult.successCount} images`, "✅");
+                postEntry(`Successfully uploaded ${uploadResult.successCount} of ${uploadResult.totalProcessed} images`, "success", loc, null);
+                
+                // Extract rowIds and wixURLs from upload results
+                const rowIds = uploadResult.results.map(result => result.rowId);
+                const wixURLs = uploadResult.results.map(result => result.wixId);
+                
+                console.log("Extracted rowIds:", rowIds);
+                console.log("Extracted wixURLs:", wixURLs);
+                
+                // Merge upload results with values.data (values[0])
+                const productData = values[0]; // This is the data array
+                
+                if (!Array.isArray(productData)) {
+                    pushMessageImg(imgMessages, "error", "Product data is not in expected format", "❌");
+                    postEntry("Product data is not an array - cannot merge", "error", loc, null);
+                    return {
+                        success: false,
+                        error: "Invalid product data format"
+                    };
+                }
+                
+                // Create a lookup map for quick access to uploaded image data by rowId
+                const uploadedImagesMap = new Map();
+                uploadResult.results.forEach(result => {
+                    uploadedImagesMap.set(result.rowId, result);
+                });
+                
+                // Merge product data with uploaded image URLs
+                const newProductListings = productData.map(product => {
+                    const uploadedImage = uploadedImagesMap.get(product.rowId);
+                    
+                    if (uploadedImage) {
+                        return {
+                            ...product,
+                            mainImg: uploadedImage.wixId,  // Add the Wix media URL
+                            fileName: uploadedImage.fileName,
+                            imageUploadedAt: uploadedImage.uploadedAt
+                        };
+                    }
+                    
+                    // Product without uploaded image (might be in failed uploads)
+                    return product;
+                });
+                
+                console.log("✅ Created newProductListings with", newProductListings.length, "products");
+                pushMessageImg(imgMessages, "info", `Merging image data with ${newProductListings.length} products...`, "🔄");
+                postEntry(`Created merged product listings with ${newProductListings.length} products`, "info", loc, null);
+                
+                // Save newProductListings to the database
+                try {
+                    // Clear existing data first
+                    const existingResults = await wixData.query(PRODUCT_LISTINGS_DB).find();
+                    const existingIds = existingResults.items.map(item => item._id);
+                    
+                    if (existingIds.length > 0) {
+                        await wixData.bulkRemove(PRODUCT_LISTINGS_DB, existingIds);
+                        console.log(`Cleared ${existingIds.length} existing product listings`);
+                        postEntry(`Cleared ${existingIds.length} existing product listings`, 'info', loc, null);
+                    }
+                    
+                    // Insert new product listings
+                    const savedProducts = await wixData.bulkInsert(PRODUCT_LISTINGS_DB, newProductListings);
+                    
+                    console.log("✅ Successfully saved", savedProducts.items.length, "product listings");
+                    pushMessageImg(imgMessages, "success", `Successfully saved ${savedProducts.items.length} product listings with images`, "✅");
+                    postEntry(`Successfully saved ${savedProducts.items.length} product listings to database`, "success", loc, null);
+                    
+                    // Store session data for later use
+                    session.setItem('newProductListings', JSON.stringify(newProductListings));
+                    session.setItem('uploadSummary', JSON.stringify({
+                        totalProducts: newProductListings.length,
+                        successfulUploads: uploadResult.successCount,
+                        failedUploads: uploadResult.failureCount
+                    }));
+                    
+                    return {
+                        success: true,
+                        newProductListings: newProductListings,
+                        rowIds: rowIds,
+                        wixURLs: wixURLs,
+                        uploadSummary: {
+                            totalProducts: newProductListings.length,
+                            successfulUploads: uploadResult.successCount,
+                            failedUploads: uploadResult.failureCount,
+                            savedProducts: savedProducts.items.length
+                        },
+                        uploadResults: uploadResult.results,
+                        failedUploads: uploadResult.failures
+                    };
+                    
+                } catch (saveError) {
+                    console.error("❌ Failed to save product listings:", saveError);
+                    pushMessageImg(imgMessages, "error", `Failed to save product listings: ${saveError.message}`, "❌");
+                    postEntry(`Failed to save product listings: ${saveError.message}`, "error", loc, saveError.stack);
+                    
+                    return {
+                        success: false,
+                        error: `Failed to save product listings: ${saveError.message}`,
+                        newProductListings: newProductListings,  // Still return the data
+                        rowIds: rowIds,
+                        wixURLs: wixURLs
+                    };
+                }
+                
+            } catch (uploadError) {
+                console.error("❌ Upload process failed:", uploadError);
+                pushMessageImg(imgMessages, "error", `Upload process failed: ${uploadError.message}`, "❌");
+                postEntry(`Upload process failed: ${uploadError.message}`, "error", loc, uploadError.stack);
+                
+                return {
+                    success: false,
+                    error: uploadError.message
+                };
+            }
+        }
+        
+        return conversionSummary;
         
     } catch (error) {
         postEntry(`Image conversion failed: ${error.message}`, "error", loc, error.stack);
@@ -197,22 +340,19 @@ export function processRawImgs(images) {
     return Promise.resolve([]);
 }
 
-$w('#uploadRawImgs').onChange( (event) => {
+$w('#uploadRawImgs').onChange((event) => {
     console.log("🔄 uploadRawImgs onChange triggered - not yet implemented");
-    $w("#uploadRawImgs").uploadFiles(files) 
-    .then((uploadedFiles) => {
-        uploadedFiles.forEach((uploadedFile) => {
-          console.log("File url:", uploadedFile.fileUrl); 
-          pushMessageImg(imgMessages, "success", `${uploadedFile.originalFileName} was uploaded successfully. It now is assigned to ${uploadedFile.fileUrl}`, "✅");
+    $w("#uploadRawImgs").uploadFiles()
+        .then((uploadedFiles) => {
+            uploadedFiles.forEach((uploadedFile) => {
+                console.log("File url:", uploadedFile.fileUrl); 
+                pushMessageImg(imgMessages, "success", `${uploadedFile.originalFileName} was uploaded successfully. It now is assigned to ${uploadedFile.fileUrl}`, "✅");
+            });
         })
-}
-
-.then((uploadedFiles) => {
-    uploadedFiles.forEach((uploadedFile) => {
-      console.log("File url:", uploadedFile.fileUrl);
-    });
-  })
-  .catch((uploadError) => {
-    let errCode = uploadError.errorCode; // 7751
-    let errDesc = uploadError.errorDescription; // "Error description"
-  });
+        .catch((uploadError) => {
+            let errCode = uploadError.errorCode;
+            let errDesc = uploadError.errorDescription;
+            console.error("Upload error:", errCode, errDesc);
+            pushMessageImg(imgMessages, "error", `Upload failed: ${errDesc}`, "❌");
+        });
+});
